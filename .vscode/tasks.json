@@ -1,0 +1,36 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Postgres: start",
+      "type": "shell",
+      "command": "docker compose up -d postgres",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Backend: dev server",
+      "type": "shell",
+      "command": "source venv/bin/activate && uvicorn app.main:app --reload --port 8000",
+      "options": { "cwd": "${workspaceFolder}/backend" },
+      "isBackground": true,
+      "presentation": { "panel": "dedicated", "group": "fullstack" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Frontend: dev server",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": { "cwd": "${workspaceFolder}/frontend" },
+      "isBackground": true,
+      "presentation": { "panel": "dedicated", "group": "fullstack" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run full stack",
+      "dependsOn": ["Postgres: start", "Backend: dev server", "Frontend: dev server"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    }
+  ]
+}
