@@ -17,3 +17,6 @@ frontend/.vite/
 
 # os
 .DS_Store
+
+# editor (machine-specific, may contain local DB credentials via SQLTools etc.)
+.vscode/settings.json

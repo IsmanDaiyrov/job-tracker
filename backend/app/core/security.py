@@ -16,7 +16,7 @@ settings = get_settings()
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 bearer_scheme = HTTPBearer(auto_error=False)
 
-
+# Security utility functions for password hashing, token creation, and user authentication.
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
@@ -42,7 +42,7 @@ def decode_access_token(token: str) -> uuid.UUID:
             headers={"WWW-Authenticate": "Bearer"},
         ) from exc
 
-
+# Dependency to get the current authenticated user from the database using the access token.
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     db: AsyncSession = Depends(get_db),

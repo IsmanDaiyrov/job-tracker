@@ -2,6 +2,7 @@ from authlib.integrations.starlette_client import OAuth
 
 from app.core.config import get_settings
 
+# Registering OAuth providers for Google and GitHub using the settings from the configuration.
 settings = get_settings()
 
 oauth = OAuth()
