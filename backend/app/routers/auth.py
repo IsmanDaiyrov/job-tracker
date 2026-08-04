@@ -14,7 +14,10 @@ from app.schemas.user import TokenResponse, UserLogin, UserRead, UserRegister
 router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
 
+# Receive HTTP requests related to user authentication, including registration, login, and OAuth-based authentication. 
+# The endpoints handle user creation, password verification, token generation, and redirection after successful OAuth authentication.
 
+# Register a new user with email and password, returning an access token upon successful registration.
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 async def register(payload: UserRegister, db: AsyncSession = Depends(get_db)) -> TokenResponse:
     existing = await get_user_by_email(db, payload.email)
@@ -25,6 +28,7 @@ async def register(payload: UserRegister, db: AsyncSession = Depends(get_db)) ->
     return TokenResponse(access_token=create_access_token(user.id))
 
 
+# Log in an existing user with email and password, returning an access token upon successful authentication.
 @router.post("/login", response_model=TokenResponse)
 async def login(payload: UserLogin, db: AsyncSession = Depends(get_db)) -> TokenResponse:
     user = await get_user_by_email(db, payload.email)
@@ -34,21 +38,25 @@ async def login(payload: UserLogin, db: AsyncSession = Depends(get_db)) -> Token
     return TokenResponse(access_token=create_access_token(user.id))
 
 
+# Get the currently authenticated user based on the access token provided in the request, returning the user's information.
 @router.get("/me", response_model=UserRead)
 async def me(current_user: User = Depends(get_current_user)) -> User:
     return current_user
 
 
+# Helper function to redirect the user to the frontend with the access token after successful OAuth authentication.
 def _oauth_redirect_to_frontend(token: str) -> RedirectResponse:
     return RedirectResponse(f"{settings.frontend_url}/auth/callback?token={token}")
 
 
+# Get the OAuth login URL for Google, redirecting the user to Google's OAuth consent screen.
 @router.get("/google")
 async def google_login(request: Request):
     redirect_uri = request.url_for("google_callback")
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 
+# Get the OAuth callback from Google, exchanging the authorization code for an access token, retrieving user info, and creating or retrieving the user in the database. Finally, redirect to the frontend with the access token.
 @router.get("/google/callback")
 async def google_callback(request: Request, db: AsyncSession = Depends(get_db)):
     token = await oauth.google.authorize_access_token(request)
@@ -60,12 +68,14 @@ async def google_callback(request: Request, db: AsyncSession = Depends(get_db)):
     return _oauth_redirect_to_frontend(create_access_token(user.id))
 
 
+# Get the OAuth login URL for GitHub, redirecting the user to GitHub's OAuth consent screen.
 @router.get("/github")
 async def github_login(request: Request):
     redirect_uri = request.url_for("github_callback")
     return await oauth.github.authorize_redirect(request, redirect_uri)
 
 
+# Get the OAuth callback from GitHub, exchanging the authorization code for an access token, retrieving user info, and creating or retrieving the user in the database. Finally, redirect to the frontend with the access token.
 @router.get("/github/callback")
 async def github_callback(request: Request, db: AsyncSession = Depends(get_db)):
     token = await oauth.github.authorize_access_token(request)

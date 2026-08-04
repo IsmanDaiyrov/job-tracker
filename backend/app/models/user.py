@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 
 
+# SQLAlchemy model for the User table, representing users with fields for email, password hash, and timestamps. It enforces a unique constraint on the email field to prevent duplicate entries.
 class User(Base):
     __tablename__ = "users"
 

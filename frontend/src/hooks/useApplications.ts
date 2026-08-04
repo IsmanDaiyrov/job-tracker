@@ -4,6 +4,10 @@ import type { Application, ApplicationInput } from '../types/application'
 
 const APPLICATIONS_KEY = ['applications']
 
+// Send HTTP requests related to job applications, providing hooks for listing, creating, updating, and deleting applications associated with the authenticated user. 
+// The hooks utilize React Query for data fetching and caching, and they ensure that the application list is kept up-to-date by invalidating queries after mutations.
+
+// Hook to fetch all applications
 export function useApplicationsQuery() {
   return useQuery({
     queryKey: APPLICATIONS_KEY,
@@ -11,6 +15,7 @@ export function useApplicationsQuery() {
   })
 }
 
+// Hook to create a new application
 export function useCreateApplication() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -20,6 +25,7 @@ export function useCreateApplication() {
   })
 }
 
+//  Hook to update an existing application
 export function useUpdateApplication() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -29,6 +35,7 @@ export function useUpdateApplication() {
   })
 }
 
+// Hook to delete an application
 export function useDeleteApplication() {
   const queryClient = useQueryClient()
   return useMutation({

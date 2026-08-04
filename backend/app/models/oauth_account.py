@@ -9,11 +9,13 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 
 
+# Enum class representing the supported OAuth providers, including Google and GitHub.
 class OAuthProvider(str, enum.Enum):
     google = "google"
     github = "github"
 
 
+# SQLAlchemy model for the OAuthAccount table, representing OAuth accounts linked to users with fields for user association, provider, provider account ID, and timestamps. It enforces a unique constraint on the combination of provider and provider account ID to prevent duplicate entries.
 class OAuthAccount(Base):
     __tablename__ = "oauth_accounts"
     __table_args__ = (UniqueConstraint("provider", "provider_account_id", name="uq_provider_account"),)
