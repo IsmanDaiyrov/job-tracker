@@ -52,6 +52,27 @@ Email/password auth and application tracking work without this. To test Google/G
 2. **GitHub**: create an OAuth App in [GitHub Developer Settings](https://github.com/settings/developers), authorization callback URL `http://localhost:8000/auth/github/callback`.
 3. Drop the client id/secret pairs into `backend/.env`.
 
+## AWS S3 setup (needed for resume uploads)
+
+Resume/cover letter storage uses real S3 with presigned URLs — the app itself works without it (you just can't upload files), but the resumes feature needs:
+
+1. Create an S3 bucket. Leave **"Block all public access" on** (the default) — presigned URLs are the only access path, objects are never public.
+2. Set the bucket's **CORS configuration** (this is the step most likely to be missed — a missing/wrong CORS config shows up as an opaque browser CORS error, not an S3 auth error):
+   ```json
+   [{"AllowedOrigins": ["http://localhost:5173"], "AllowedMethods": ["PUT", "GET"], "AllowedHeaders": ["*"], "ExposeHeaders": ["ETag"], "MaxAgeSeconds": 3000}]
+   ```
+3. Create a dedicated IAM user (programmatic access, no console password) and attach this inline policy, with your real bucket name substituted in:
+   ```json
+   {"Version": "2012-10-17", "Statement": [{"Effect": "Allow", "Action": ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"], "Resource": "arn:aws:s3:::YOUR_BUCKET_NAME/*"}]}
+   ```
+4. Generate an access key for that IAM user and drop the values into `backend/.env`:
+   ```
+   AWS_REGION=us-east-1
+   AWS_ACCESS_KEY_ID=
+   AWS_SECRET_ACCESS_KEY=
+   AWS_S3_BUCKET=
+   ```
+
 ## Architecture
 
 ### Backend (`backend/app/`)
@@ -60,7 +81,7 @@ Layered by responsibility — each folder only knows about the one below it:
 
 | Layer | Folder | Job |
 |---|---|---|
-| Config/security | `core/` | Env var loading (`config.py`), password hashing + JWT (`security.py`), OAuth client setup (`oauth.py`) |
+| Config/security | `core/` | Env var loading (`config.py`), password hashing + JWT (`security.py`), OAuth client setup (`oauth.py`), S3 presigned URLs (`s3.py`) |
 | Database connection | `db/` | SQLAlchemy engine/session (`session.py`), declarative base (`base.py`) |
 | Tables | `models/` | SQLAlchemy classes — what the DB tables actually look like |
 | Validation | `schemas/` | Pydantic classes — shape of request/response JSON, separate from the DB models on purpose (see below) |
@@ -83,10 +104,10 @@ PostgreSQL (Docker)
 
 | Folder | Job |
 |---|---|
-| `routes/` | Full pages — `LandingPage`, `LoginPage`, `ApplicationsTablePage`, `ApplicationsBoardPage`, etc. |
-| `components/` | Reusable pieces used by routes — Kanban card/column, form inputs, nav bar |
+| `routes/` | Full pages — `LandingPage`, `LoginPage`, `ApplicationsTablePage`, `ApplicationsBoardPage`, `ResumesPage`, etc. |
+| `components/` | Reusable pieces used by routes — Kanban card/column, form inputs, nav bar, resume upload form/list |
 | `auth/` | Login/session state — `AuthContext` (React Context, not Redux) + `RequireAuth` route guard |
-| `hooks/` | Data-fetching logic — `useApplications.ts` wraps all `/applications` calls in React Query |
+| `hooks/` | Data-fetching logic — `useApplications.ts` / `useResumes.ts` wrap their respective API calls in React Query |
 | `lib/api.ts` | The single `axios` instance every network call goes through — attaches the JWT header, handles 401s globally |
 | `types/` | Shared TypeScript types mirroring the backend's Pydantic schemas |
 
@@ -101,17 +122,30 @@ routers/auth.py (backend)   → validates payload, issues a JWT
 back to AuthContext.tsx     → stores token, fetches /auth/me, updates React state
 ```
 
+Resume upload is a three-hop flow, not a single request — the backend only ever handles metadata, never the file bytes:
+```
+hooks/useResumes.ts (useUploadResume)
+        ↓  1. POST /resumes { label, content_type }
+routers/resumes.py          → creates the DB row, asks core/s3.py to sign an upload URL
+        ↓  2. returns { resume, upload_url }
+useUploadResume             → does a bare fetch() PUT of the raw file directly to upload_url
+        ↓  (goes straight to AWS — never touches our backend)
+S3 bucket
+```
+
 ### Key design decisions
 
 - **ORM models and Pydantic schemas are kept separate** (`models/` vs `schemas/`), even though it's more files — this lets API responses diverge from DB columns (e.g. hiding `password_hash`) without reshaping the database.
 - **Auth state uses React Context, not Redux.** Redux solves *client* state; your applications data is *server* state (it lives in Postgres, the frontend just caches it), which is what React Query is purpose-built for. Auth session data is small and rarely changes, so Context is enough on its own.
 - **JWT lives in `localStorage`**, not an httpOnly cookie — simpler for local dev across different ports (`5173` frontend, `8000` backend); flagged as a hardening item before any real deployment.
 - **Native Postgres enums** (`ApplicationStatus`, `OAuthProvider`) instead of plain strings — DB-level validation, at the cost of enum changes needing a slightly more careful migration later.
+- **Resume rows are created optimistically, before the S3 upload happens** — not a two-step presign-then-confirm state machine. A failed upload can leave an orphaned DB row with no matching S3 object (harmless, just delete it), which is a simpler tradeoff than adding a `pending`/`complete` status column for a solo-user app.
+- **`core/s3.py` forces the regional S3 endpoint explicitly** (`s3.<region>.amazonaws.com`), rather than letting boto3 default to the legacy global `s3.amazonaws.com`. For any bucket outside `us-east-1`, that default endpoint causes AWS to redirect — and since the browser's `fetch()` PUT is a cross-origin request, that redirect surfaces as a generic CORS error rather than a clear "wrong endpoint" message. Worth knowing if you ever see a CORS failure that a correct CORS config doesn't fix.
 
 ## Roadmap
 
 - [x] **Foundation** — email/password + Google/GitHub auth, application CRUD, table + Kanban board, landing page
-- [ ] **File storage** — resume/cover letter upload to S3, presigned URLs
+- [x] **File storage** — resume library, presigned S3 upload/download, verified end-to-end against a real bucket
 - [ ] **AI tailoring** — Claude API integration for tailored bullets + cover letter drafts
 - [ ] **Dashboard** — stats endpoint + charts (status breakdown, response rate, time-in-stage)
 - [ ] **Deploy** — Postgres + API on Render/Fly, frontend on Vercel/Netlify

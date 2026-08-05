@@ -17,6 +17,11 @@ class Settings(BaseSettings):
     github_client_id: str = ""
     github_client_secret: str = ""
 
+    aws_region: str = "us-east-1"
+    aws_access_key_id: str = ""
+    aws_secret_access_key: str = ""
+    aws_s3_bucket: str = ""
+
 # Returns the application settings, cached for performance.
 @lru_cache
 def get_settings() -> Settings:

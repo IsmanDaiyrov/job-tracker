@@ -6,6 +6,7 @@ import { Button } from '../ui/Button'
 const links = [
   { to: '/app/table', label: 'Table' },
   { to: '/app/board', label: 'Board' },
+  { to: '/app/resumes', label: 'Resumes' },
 ]
 
 export function NavBar() {

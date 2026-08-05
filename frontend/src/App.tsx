@@ -10,6 +10,7 @@ import { LandingPage } from './routes/LandingPage'
 import { LoginPage } from './routes/LoginPage'
 import { OAuthCallbackPage } from './routes/OAuthCallbackPage'
 import { RegisterPage } from './routes/RegisterPage'
+import { ResumesPage } from './routes/ResumesPage'
 
 const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -26,6 +27,7 @@ const router = createBrowserRouter([
           { index: true, element: <Navigate to="table" replace /> },
           { path: 'table', element: <ApplicationsTablePage /> },
           { path: 'board', element: <ApplicationsBoardPage /> },
+          { path: 'resumes', element: <ResumesPage /> },
         ],
       },
     ],

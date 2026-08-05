@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.core.config import get_settings
-from app.routers import applications, auth
+from app.routers import applications, auth, resumes
 
 settings = get_settings()
 
@@ -24,6 +24,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(applications.router)
+app.include_router(resumes.router)
 
 
 @app.get("/health")
@@ -31,4 +32,4 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-# Future routers plug in here: resumes, /applications/{id}/tailor, /stats/overview
+# Future routers plug in here: /applications/{id}/tailor, /stats/overview
