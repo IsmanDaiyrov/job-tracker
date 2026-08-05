@@ -8,7 +8,7 @@ async def test_create_and_list_application(client: AsyncClient, auth_headers: di
         headers=auth_headers,
     )
     assert resp.status_code == 201
-    assert resp.json()["status"] == "saved"
+    assert resp.json()["status"] == "applied"
 
     resp = await client.get("/applications", headers=auth_headers)
     assert resp.status_code == 200

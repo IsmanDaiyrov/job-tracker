@@ -32,7 +32,7 @@ class Application(Base):
     job_url: Mapped[str | None]
     status: Mapped[ApplicationStatus] = mapped_column(
         Enum(ApplicationStatus, name="application_status"),
-        default=ApplicationStatus.saved,
+        default=ApplicationStatus.applied,
         nullable=False,
     )
     applied_at: Mapped[date | None]

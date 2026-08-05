@@ -28,7 +28,7 @@ const emptyDefaults: ApplicationFormValues = {
   role_title: "",
   job_url: "",
   job_description: "",
-  status: "saved",
+  status: "applied",
   applied_at: "",
   notes: "",
 };

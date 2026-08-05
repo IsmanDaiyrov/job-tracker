@@ -11,7 +11,7 @@ class ApplicationBase(BaseModel):
     role_title: str
     job_description: str | None = None
     job_url: str | None = None
-    status: ApplicationStatus = ApplicationStatus.saved
+    status: ApplicationStatus = ApplicationStatus.applied
     applied_at: date | None = None
     notes: str | None = None
 
