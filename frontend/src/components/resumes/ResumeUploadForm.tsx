@@ -65,7 +65,7 @@ export function ResumeUploadForm({
           id="file"
           type="file"
           accept=".pdf,.docx"
-          className="w-full rounded-[10px] border border-ink/15 bg-paper px-3 py-2 text-sm text-ink file:mr-3 file:rounded-[8px] file:border-0 file:bg-ink/5 file:px-3 file:py-1.5 file:text-sm"
+          className="w-full rounded-[10px] border border-ink/15 bg-paper px-3 py-2 text-sm text-ink file:mr-3 file:rounded-lg file:border-0 file:bg-ink/5 file:px-3 file:py-1.5 file:text-sm"
           {...register('file')}
         />
         <FieldError>{errors.file?.message as string | undefined}</FieldError>
