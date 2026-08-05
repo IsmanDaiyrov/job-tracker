@@ -1,40 +1,40 @@
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { Link, useNavigate } from 'react-router-dom'
-import { z } from 'zod'
-import { useAuth } from '../auth/useAuth'
-import { OAuthButtons } from '../components/auth/OAuthButtons'
-import { Button } from '../components/ui/Button'
-import { FieldError, Input, Label } from '../components/ui/Input'
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { Link, useNavigate } from "react-router-dom";
+import { z } from "zod";
+import { useAuth } from "../auth/useAuth";
+import { OAuthButtons } from "../components/auth/OAuthButtons";
+import { Button } from "../components/ui/Button";
+import { FieldError, Input, Label } from "../components/ui/Input";
 
 const loginSchema = z.object({
-  email: z.string().email('Enter a valid email'),
-  password: z.string().min(1, 'Password is required'),
-})
+  email: z.string().email("Enter a valid email"),
+  password: z.string().min(1, "Password is required"),
+});
 
-type LoginForm = z.infer<typeof loginSchema>
+type LoginForm = z.infer<typeof loginSchema>;
 
 export function LoginPage() {
-  const { login } = useAuth()
-  const navigate = useNavigate()
-  const [serverError, setServerError] = useState<string | null>(null)
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginForm>({ resolver: zodResolver(loginSchema) })
+  } = useForm<LoginForm>({ resolver: zodResolver(loginSchema) });
 
   const onSubmit = async (data: LoginForm) => {
-    setServerError(null)
+    setServerError(null);
     try {
-      await login(data.email, data.password)
-      navigate('/app/table')
+      await login(data.email, data.password);
+      navigate("/app/table");
     } catch {
-      setServerError('Incorrect email or password.')
+      setServerError("Incorrect email or password.");
     }
-  }
+  };
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
@@ -47,7 +47,13 @@ export function LoginPage() {
         <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
           <div>
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" autoComplete="email" {...register('email')} />
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              {...register("email")}
+            />
             <FieldError>{errors.email?.message}</FieldError>
           </div>
           <div>
@@ -56,13 +62,14 @@ export function LoginPage() {
               id="password"
               type="password"
               autoComplete="current-password"
-              {...register('password')}
+              placeholder="••••••••"
+              {...register("password")}
             />
             <FieldError>{errors.password?.message}</FieldError>
           </div>
           {serverError && <p className="text-xs text-coral">{serverError}</p>}
           <Button type="submit" disabled={isSubmitting} className="w-full">
-            {isSubmitting ? 'Signing in…' : 'Sign in'}
+            {isSubmitting ? "Signing in…" : "Sign in"}
           </Button>
         </form>
 
@@ -75,12 +82,12 @@ export function LoginPage() {
         <OAuthButtons />
 
         <p className="mt-6 text-center text-sm text-ink/60">
-          Don't have an account?{' '}
+          Don't have an account?{" "}
           <Link to="/register" className="font-medium text-ink hover:underline">
             Sign up
           </Link>
         </p>
       </div>
     </div>
-  )
+  );
 }
