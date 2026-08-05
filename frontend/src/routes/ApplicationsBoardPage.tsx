@@ -2,11 +2,14 @@ import { useState } from 'react'
 import { ApplicationFormModal } from '../components/applications/ApplicationFormModal'
 import { KanbanBoard } from '../components/applications/KanbanBoard'
 import { Button } from '../components/ui/Button'
+import { Input } from '../components/ui/Input'
+import { useApplicationSearch } from '../hooks/useApplicationSearch'
 import { useApplicationsQuery, useUpdateApplication } from '../hooks/useApplications'
 import type { Application, ApplicationStatus } from '../types/application'
 
 export function ApplicationsBoardPage() {
   const { data: applications, isLoading } = useApplicationsQuery()
+  const { query, setQuery, filtered } = useApplicationSearch(applications)
   const updateMutation = useUpdateApplication()
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Application | null>(null)
@@ -27,16 +30,24 @@ export function ApplicationsBoardPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex items-center justify-between gap-4">
         <h1 className="font-display text-2xl">Applications</h1>
-        <Button onClick={openAddModal}>Add application</Button>
+        <div className="flex items-center gap-3">
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by company or role…"
+            className="w-64"
+          />
+          <Button onClick={openAddModal}>Add application</Button>
+        </div>
       </div>
 
       {isLoading ? (
         <p className="text-sm text-ink/50">Loading…</p>
       ) : (
         <KanbanBoard
-          applications={applications ?? []}
+          applications={filtered}
           onStatusChange={handleStatusChange}
           onCardClick={openEditModal}
         />

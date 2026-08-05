@@ -1,16 +1,17 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import clsx from 'clsx'
 import { useAuth } from '../../auth/useAuth'
 import { Button } from '../ui/Button'
 
 const links = [
-  { to: '/app/table', label: 'Table' },
-  { to: '/app/board', label: 'Board' },
-  { to: '/app/resumes', label: 'Resumes' },
+  { to: '/app/table', label: 'Table', preserveSearch: true },
+  { to: '/app/board', label: 'Board', preserveSearch: true },
+  { to: '/app/resumes', label: 'Resumes', preserveSearch: false },
 ]
 
 export function NavBar() {
   const { user, logout } = useAuth()
+  const location = useLocation()
 
   return (
     <header className="border-b border-ink/10">
@@ -23,7 +24,9 @@ export function NavBar() {
           {links.map((link) => (
             <NavLink
               key={link.to}
-              to={link.to}
+              // Carry the current ?q= search term across Table <-> Board so switching views
+              // doesn't lose it — plain string `to` props drop the query string on navigation.
+              to={link.preserveSearch ? { pathname: link.to, search: location.search } : link.to}
               className={({ isActive }) =>
                 clsx(
                   'rounded-[10px] px-3 py-1.5 text-sm font-medium transition',

@@ -10,6 +10,7 @@ const stripeColors: Record<ApplicationStatus, string> = {
   interview: 'bg-accent',
   offer: 'bg-sage',
   rejected: 'bg-coral',
+  withdrawn: 'bg-ink/10',
 }
 
 function daysSince(dateStr: string | null): string | null {

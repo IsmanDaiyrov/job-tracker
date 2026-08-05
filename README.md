@@ -107,7 +107,7 @@ PostgreSQL (Docker)
 | `routes/` | Full pages — `LandingPage`, `LoginPage`, `ApplicationsTablePage`, `ApplicationsBoardPage`, `ResumesPage`, etc. |
 | `components/` | Reusable pieces used by routes — Kanban card/column, form inputs, nav bar, resume upload form/list |
 | `auth/` | Login/session state — `AuthContext` (React Context, not Redux) + `RequireAuth` route guard |
-| `hooks/` | Data-fetching logic — `useApplications.ts` / `useResumes.ts` wrap their respective API calls in React Query |
+| `hooks/` | Data-fetching logic — `useApplications.ts` / `useResumes.ts` wrap their respective API calls in React Query; `useApplicationSearch.ts` filters the cached list client-side, with the search term kept in the URL (`?q=`) rather than component state |
 | `lib/api.ts` | The single `axios` instance every network call goes through — attaches the JWT header, handles 401s globally |
 | `types/` | Shared TypeScript types mirroring the backend's Pydantic schemas |
 
@@ -141,6 +141,8 @@ S3 bucket
 - **Native Postgres enums** (`ApplicationStatus`, `OAuthProvider`) instead of plain strings — DB-level validation, at the cost of enum changes needing a slightly more careful migration later.
 - **Resume rows are created optimistically, before the S3 upload happens** — not a two-step presign-then-confirm state machine. A failed upload can leave an orphaned DB row with no matching S3 object (harmless, just delete it), which is a simpler tradeoff than adding a `pending`/`complete` status column for a solo-user app.
 - **`core/s3.py` forces the regional S3 endpoint explicitly** (`s3.<region>.amazonaws.com`), rather than letting boto3 default to the legacy global `s3.amazonaws.com`. For any bucket outside `us-east-1`, that default endpoint causes AWS to redirect — and since the browser's `fetch()` PUT is a cross-origin request, that redirect surfaces as a generic CORS error rather than a clear "wrong endpoint" message. Worth knowing if you ever see a CORS failure that a correct CORS config doesn't fix.
+- **Application search is client-side, filtering the already-cached list** — not a `?search=` param on `GET /applications`. At personal-project scale (dozens to a few hundred rows) this is simpler and instant, with no per-keystroke network round-trip. The search term lives in the URL (`?q=`) rather than component state, so it survives switching between Table and Board — `NavBar.tsx`'s links deliberately carry the current `location.search` forward for exactly this reason.
+- **New enum values on a native Postgres enum need a hand-written migration**, not `--autogenerate` — Alembic's default comparator doesn't reliably detect added members on an existing enum type (see the `withdrawn` status migration for the pattern: a bare `ALTER TYPE ... ADD VALUE`, with `downgrade()` left as a no-op since Postgres has no `DROP VALUE`).
 
 ## Roadmap
 

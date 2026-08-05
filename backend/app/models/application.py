@@ -9,7 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 
 
-# Enum class representing the possible statuses of a job application, including saved, applied, screening, interview, offer, and rejected.
+# Enum class representing the possible statuses of a job application, including saved, applied, screening, interview, offer, rejected, and withdrawn.
 class ApplicationStatus(str, enum.Enum):
     saved = "saved"
     applied = "applied"
@@ -17,6 +17,7 @@ class ApplicationStatus(str, enum.Enum):
     interview = "interview"
     offer = "offer"
     rejected = "rejected"
+    withdrawn = "withdrawn"
 
 
 # SQLAlchemy model for the Application table, representing job applications with fields for user association, company, role title, job description, status, and timestamps.

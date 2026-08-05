@@ -5,15 +5,17 @@ export function ApplicationTable({
   applications,
   onEdit,
   onDelete,
+  emptyMessage = 'No applications yet. Add your first one to get started.',
 }: {
   applications: Application[]
   onEdit: (application: Application) => void
   onDelete: (application: Application) => void
+  emptyMessage?: string
 }) {
   if (applications.length === 0) {
     return (
       <div className="rounded-xl border border-ink/10 py-16 text-center text-sm text-ink/50">
-        No applications yet. Add your first one to get started.
+        {emptyMessage}
       </div>
     )
   }

@@ -9,6 +9,7 @@ const statusColors: Record<ApplicationStatus, string> = {
   interview: 'bg-accent/30 text-ink',
   offer: 'bg-sage/20 text-sage',
   rejected: 'bg-coral/15 text-coral',
+  withdrawn: 'bg-ink/5 text-ink/40',
 }
 
 export function StatusBadge({ status }: { status: ApplicationStatus }) {

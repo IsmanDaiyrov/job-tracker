@@ -5,6 +5,7 @@ export type ApplicationStatus =
   | 'interview'
   | 'offer'
   | 'rejected'
+  | 'withdrawn'
 
 export const APPLICATION_STATUSES: ApplicationStatus[] = [
   'saved',
@@ -13,6 +14,7 @@ export const APPLICATION_STATUSES: ApplicationStatus[] = [
   'interview',
   'offer',
   'rejected',
+  'withdrawn',
 ]
 
 export const STATUS_LABELS: Record<ApplicationStatus, string> = {
@@ -22,6 +24,7 @@ export const STATUS_LABELS: Record<ApplicationStatus, string> = {
   interview: 'Interview',
   offer: 'Offer',
   rejected: 'Rejected',
+  withdrawn: 'Withdrawn',
 }
 
 export interface Application {
