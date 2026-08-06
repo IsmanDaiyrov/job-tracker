@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import {
   APPLICATION_STATUSES,
@@ -8,6 +8,7 @@ import {
   type Application,
 } from "../../types/application";
 import { Button } from "../ui/Button";
+import { DatePicker } from "../ui/DatePicker";
 import { FieldError, Input, Label, Textarea } from "../ui/Input";
 import { Select } from "../ui/Select";
 
@@ -48,6 +49,7 @@ export function ApplicationForm({
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<ApplicationFormValues>({
     resolver: zodResolver(applicationSchema),
@@ -120,7 +122,13 @@ export function ApplicationForm({
         </div>
         <div>
           <Label htmlFor="applied_at">Date applied</Label>
-          <Input id="applied_at" type="date" {...register("applied_at")} />
+          <Controller
+            name="applied_at"
+            control={control}
+            render={({ field }) => (
+              <DatePicker id="applied_at" value={field.value} onChange={field.onChange} />
+            )}
+          />
         </div>
       </div>
 
