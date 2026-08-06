@@ -30,15 +30,16 @@ export function ApplicationsBoardPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between gap-4">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <h1 className="font-display text-2xl">Applications</h1>
-        <div className="flex items-center gap-3">
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by company or role…"
-            className="w-64"
-          />
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="w-64">
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by company or role…"
+            />
+          </div>
           <Button onClick={openAddModal}>Add application</Button>
         </div>
       </div>
