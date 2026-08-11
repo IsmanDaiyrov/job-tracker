@@ -1,23 +1,11 @@
 import { Link } from 'react-router-dom'
 import { Button } from '../components/ui/Button'
-import { BoardPreview, TablePreview } from '../components/landing/ProductPreview'
-
-const features = [
-  {
-    title: 'Search across every season',
-    description:
-      "Applied to the same company two years running? Find it instantly instead of digging through old sheets.",
-  },
-  {
-    title: 'Resumes stay attached',
-    description:
-      'Upload the version you actually sent for each application, so you know what they saw.',
-  },
-  {
-    title: 'Sign in your way',
-    description: 'Email and password, or continue with Google or GitHub — whatever you already use.',
-  },
-]
+import {
+  BoardPreview,
+  ResumesPreview,
+  SearchPreview,
+  TablePreview,
+} from '../components/landing/ProductPreview'
 
 const steps = [
   {
@@ -129,14 +117,34 @@ export function LandingPage() {
 
       <section className="border-t border-ink/10">
         <div className="mx-auto max-w-6xl px-6 py-20">
-          <h2 className="font-display text-2xl">Everything else you'd expect</h2>
-          <div className="mt-10 grid gap-10 md:grid-cols-3 md:gap-6">
-            {features.map((feature) => (
-              <div key={feature.title}>
-                <h3 className="font-display text-xl">{feature.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-ink/60">{feature.description}</p>
-              </div>
-            ))}
+          <div className="grid items-center gap-16 lg:grid-cols-[minmax(0,1fr)_420px]">
+            <div>
+              <h2 className="font-display text-2xl">Search across every season.</h2>
+              <p className="mt-3 max-w-md text-sm leading-relaxed text-ink/60">
+                Applied to the same company two years running? Type a company or role and find it
+                instantly instead of digging through old sheets — it filters as you type, right
+                there in the table or board.
+              </p>
+            </div>
+            <SearchPreview />
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-ink/10">
+        <div className="mx-auto max-w-6xl px-6 py-20">
+          <div className="grid items-center gap-16 lg:grid-cols-[420px_minmax(0,1fr)]">
+            <div className="order-2 lg:order-1">
+              <ResumesPreview />
+            </div>
+            <div className="order-1 lg:order-2">
+              <h2 className="font-display text-2xl">Resumes stay attached to the ones you sent.</h2>
+              <p className="mt-3 max-w-md text-sm leading-relaxed text-ink/60">
+                Upload the version you actually sent for each application, so you know what they
+                saw. Mark one as your default and set the rest aside for roles that need something
+                tailored.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -144,6 +152,9 @@ export function LandingPage() {
       <section className="border-t border-ink/10">
         <div className="mx-auto max-w-6xl px-6 py-20 text-center">
           <h2 className="font-display text-3xl">Ready to bring order to the chaos?</h2>
+          <p className="mt-3 text-sm text-ink/50">
+            Sign in with email, Google, or GitHub — whatever you already use.
+          </p>
           <div className="mt-6">
             <Link to="/register">
               <Button className="px-6 py-3 text-base">Create your free account</Button>

@@ -8,8 +8,8 @@ const EXTENSION_LABELS: Record<string, string> = {
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'DOCX',
 }
 
-// A single resume row: label, file type, upload date, a "Base" badge if applicable, and
-// Set as base/Download/Delete actions wired to their respective mutations.
+// A single resume row: label, file type, upload date, a "Default" badge if applicable, and
+// Set as default/Download/Delete actions wired to their respective mutations.
 export function ResumeRow({ resume }: { resume: Resume }) {
   const updateMutation = useUpdateResume()
   const deleteMutation = useDeleteResume()
@@ -27,7 +27,7 @@ export function ResumeRow({ resume }: { resume: Resume }) {
         </div>
         {resume.is_base && (
           <span className="inline-flex items-center rounded-full bg-accent/30 px-2.5 py-0.5 text-xs font-medium text-ink">
-            Base
+            Default
           </span>
         )}
       </div>
@@ -38,7 +38,7 @@ export function ResumeRow({ resume }: { resume: Resume }) {
             onClick={() => updateMutation.mutate({ id: resume.id, payload: { is_base: true } })}
             className="text-ink/50 hover:text-ink"
           >
-            Set as base
+            Set as default
           </button>
         )}
         <button

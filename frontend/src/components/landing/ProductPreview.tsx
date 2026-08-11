@@ -12,14 +12,14 @@ import type { ApplicationStatus } from '../../types/application'
 // edge case, so avoid names like "Linear" that are known to guess wrong (linear.app, not
 // linear.com).
 
-function MiniAppHeader({ active }: { active: 'Table' | 'Board' }) {
+function MiniAppHeader({ active }: { active: 'Table' | 'Board' | 'Resumes' }) {
   return (
     <div className="flex items-center justify-between border-b border-ink/10 px-4 py-3">
       <span className="font-display text-sm">
         Pipeline<span className="text-accent">.</span>
       </span>
       <div className="flex items-center gap-1">
-        {(['Table', 'Board'] as const).map((label) => (
+        {(['Table', 'Board', 'Resumes'] as const).map((label) => (
           <span
             key={label}
             className={
@@ -132,6 +132,89 @@ export function TablePreview() {
           ))}
         </tbody>
       </table>
+    </div>
+  )
+}
+
+const searchRows: { company: string; role: string }[] = [
+  { company: 'Google', role: 'Software Engineer' },
+  { company: 'Notion', role: 'Full Stack Engineer' },
+  { company: 'Figma', role: 'Software Engineer, Infra' },
+  { company: 'Datadog', role: 'Platform Engineer' },
+]
+const searchQuery = 'notion'
+
+export function SearchPreview() {
+  return (
+    <div className="overflow-hidden rounded-xl border border-ink/10 bg-paper">
+      <MiniAppHeader active="Table" />
+      <div className="p-3">
+        <div className="w-40 rounded-[8px] border border-ink/15 bg-paper px-2.5 py-1.5 text-xs text-ink">
+          {searchQuery}
+        </div>
+        <div className="mt-3 flex flex-col gap-1">
+          {searchRows.map((row) => {
+            const matches = row.company.toLowerCase().includes(searchQuery)
+            return (
+              <div
+                key={row.company}
+                className={
+                  'flex items-center gap-2 rounded-[8px] px-2 py-1.5 ' +
+                  (matches ? 'bg-accent/15' : 'opacity-30')
+                }
+              >
+                <CompanyLogo company={row.company} size={16} />
+                <p className="text-xs font-medium">{row.company}</p>
+                <p className="text-[11px] text-ink/50">{row.role}</p>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const resumeRows: { label: string; type: string; date: string; isBase: boolean }[] = [
+  { label: 'Base Resume', type: 'PDF', date: 'Aug 2, 2026', isBase: true },
+  { label: 'Backend-focused', type: 'PDF', date: 'Jul 20, 2026', isBase: false },
+]
+
+export function ResumesPreview() {
+  return (
+    <div className="overflow-hidden rounded-xl border border-ink/10 bg-paper">
+      <MiniAppHeader active="Resumes" />
+      <div className="flex items-center justify-between px-4 py-3">
+        <span className="font-display text-sm">Resumes</span>
+        <span className="rounded-[7px] bg-accent px-2.5 py-1 text-xs font-medium text-ink">
+          Upload resume
+        </span>
+      </div>
+      <div>
+        {resumeRows.map((resume) => (
+          <div
+            key={resume.label}
+            className="flex items-center justify-between border-t border-ink/5 px-4 py-3"
+          >
+            <div className="flex items-center gap-2">
+              <div>
+                <p className="text-xs font-medium">{resume.label}</p>
+                <p className="mt-0.5 text-[11px] text-ink/50">
+                  {resume.type} · {resume.date}
+                </p>
+              </div>
+              {resume.isBase && (
+                <span className="inline-flex items-center rounded-full bg-accent/30 px-2 py-0.5 text-[10px] font-medium text-ink">
+                  Default
+                </span>
+              )}
+            </div>
+            <span className="text-[11px] font-medium text-ink/40">
+              {resume.isBase ? 'Download' : 'Set as default'}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
