@@ -1,6 +1,6 @@
-import { StatusBadge } from '../applications/StatusBadge'
-import { CompanyLogo } from '../ui/CompanyLogo'
-import type { ApplicationStatus } from '../../types/application'
+import { StatusBadge } from "../applications/StatusBadge";
+import { CompanyLogo } from "../ui/CompanyLogo";
+import type { ApplicationStatus } from "../../types/application";
 
 // Purely decorative, hardcoded previews for the landing page — not wired to any real data or
 // API. Built from the same design tokens and, where safe, the same components (StatusBadge,
@@ -12,19 +12,19 @@ import type { ApplicationStatus } from '../../types/application'
 // edge case, so avoid names like "Linear" that are known to guess wrong (linear.app, not
 // linear.com).
 
-function MiniAppHeader({ active }: { active: 'Table' | 'Board' | 'Resumes' }) {
+function MiniAppHeader({ active }: { active: "Table" | "Board" | "Resumes" }) {
   return (
     <div className="flex items-center justify-between border-b border-ink/10 px-4 py-3">
       <span className="font-display text-sm">
         Pipeline<span className="text-accent">.</span>
       </span>
       <div className="flex items-center gap-1">
-        {(['Table', 'Board', 'Resumes'] as const).map((label) => (
+        {(["Table", "Board", "Resumes"] as const).map((label) => (
           <span
             key={label}
             className={
-              'rounded-[7px] px-2.5 py-1 text-xs font-medium ' +
-              (label === active ? 'bg-accent text-ink' : 'text-ink/40')
+              "rounded-[7px] px-2.5 py-1 text-xs font-medium " +
+              (label === active ? "bg-accent text-ink" : "text-ink/40")
             }
           >
             {label}
@@ -32,31 +32,53 @@ function MiniAppHeader({ active }: { active: 'Table' | 'Board' | 'Resumes' }) {
         ))}
       </div>
     </div>
-  )
+  );
 }
 
 const stripeColors: Record<ApplicationStatus, string> = {
-  saved: 'bg-ink/20',
-  applied: 'bg-ink/20',
-  screening: 'bg-accent',
-  interview: 'bg-accent',
-  offer: 'bg-sage',
-  rejected: 'bg-coral',
-  withdrawn: 'bg-ink/10',
-}
+  saved: "bg-ink/20",
+  applied: "bg-ink/20",
+  screening: "bg-accent",
+  interview: "bg-accent",
+  offer: "bg-sage",
+  rejected: "bg-coral",
+  withdrawn: "bg-ink/10",
+};
 
-const boardColumns: { label: string; cards: { company: string; role: string; status: ApplicationStatus }[] }[] = [
-  { label: 'Applied', cards: [{ company: 'Notion', role: 'Full Stack Engineer', status: 'applied' }] },
-  { label: 'Screening', cards: [{ company: 'Vercel', role: 'Frontend Engineer', status: 'screening' }] },
+const boardColumns: {
+  label: string;
+  cards: { company: string; role: string; status: ApplicationStatus }[];
+}[] = [
   {
-    label: 'Interview',
+    label: "Applied",
     cards: [
-      { company: 'Anthropic', role: 'Software Engineer', status: 'interview' },
-      { company: 'Airbnb', role: 'Senior Software Engineer', status: 'interview' },
+      { company: "Notion", role: "Full Stack Engineer", status: "applied" },
     ],
   },
-  { label: 'Offer', cards: [{ company: 'Figma', role: 'Software Engineer, Infra', status: 'offer' }] },
-]
+  {
+    label: "Screening",
+    cards: [
+      { company: "Vercel", role: "Frontend Engineer", status: "screening" },
+    ],
+  },
+  {
+    label: "Interview",
+    cards: [
+      { company: "Anthropic", role: "Software Engineer", status: "interview" },
+      {
+        company: "Airbnb",
+        role: "Senior Software Engineer",
+        status: "interview",
+      },
+    ],
+  },
+  {
+    label: "Offer",
+    cards: [
+      { company: "Figma", role: "Software Engineer, Infra", status: "offer" },
+    ],
+  },
+];
 
 export function BoardPreview() {
   return (
@@ -64,7 +86,10 @@ export function BoardPreview() {
       <MiniAppHeader active="Board" />
       <div className="flex divide-x divide-ink/5 p-3">
         {boardColumns.map((column) => (
-          <div key={column.label} className="w-40 shrink-0 px-2 first:pl-0 last:pr-0">
+          <div
+            key={column.label}
+            className="w-40 shrink-0 px-2 first:pl-0 last:pr-0"
+          >
             <div className="px-1 text-[10px] font-medium uppercase tracking-wide text-ink/40">
               {column.label}
             </div>
@@ -76,7 +101,8 @@ export function BoardPreview() {
                 >
                   <span
                     className={
-                      'absolute inset-y-0 left-0 w-1 rounded-l-[10px] ' + stripeColors[card.status]
+                      "absolute inset-y-0 left-0 w-1 rounded-l-[10px] " +
+                      stripeColors[card.status]
                     }
                   />
                   <div className="flex items-center gap-1.5">
@@ -91,15 +117,40 @@ export function BoardPreview() {
         ))}
       </div>
     </div>
-  )
+  );
 }
 
-const tableRows: { company: string; role: string; status: ApplicationStatus; applied: string }[] = [
-  { company: 'Google', role: 'Software Engineer', status: 'interview', applied: 'Aug 3' },
-  { company: 'Notion', role: 'Full Stack Engineer', status: 'applied', applied: 'Jul 29' },
-  { company: 'Figma', role: 'Software Engineer, Infra', status: 'offer', applied: 'Jun 30' },
-  { company: 'Datadog', role: 'Platform Engineer', status: 'rejected', applied: 'Jul 1' },
-]
+const tableRows: {
+  company: string;
+  role: string;
+  status: ApplicationStatus;
+  applied: string;
+}[] = [
+  {
+    company: "Google",
+    role: "Software Engineer",
+    status: "interview",
+    applied: "Aug 3",
+  },
+  {
+    company: "Notion",
+    role: "Full Stack Engineer",
+    status: "applied",
+    applied: "Jul 29",
+  },
+  {
+    company: "Figma",
+    role: "Software Engineer, Infra",
+    status: "offer",
+    applied: "Jun 30",
+  },
+  {
+    company: "Datadog",
+    role: "Platform Engineer",
+    status: "rejected",
+    applied: "Jul 1",
+  },
+];
 
 export function TablePreview() {
   return (
@@ -116,7 +167,10 @@ export function TablePreview() {
         </thead>
         <tbody>
           {tableRows.map((row) => (
-            <tr key={row.company} className="border-b border-ink/5 last:border-0">
+            <tr
+              key={row.company}
+              className="border-b border-ink/5 last:border-0"
+            >
               <td className="px-4 py-2.5 text-xs font-medium">
                 <div className="flex items-center gap-2">
                   <CompanyLogo company={row.company} size={16} />
@@ -133,52 +187,62 @@ export function TablePreview() {
         </tbody>
       </table>
     </div>
-  )
+  );
 }
 
 const searchRows: { company: string; role: string }[] = [
-  { company: 'Google', role: 'Software Engineer' },
-  { company: 'Notion', role: 'Full Stack Engineer' },
-  { company: 'Figma', role: 'Software Engineer, Infra' },
-  { company: 'Datadog', role: 'Platform Engineer' },
-]
-const searchQuery = 'notion'
+  { company: "Google", role: "Software Engineer" },
+  { company: "Notion", role: "Full Stack Engineer" },
+  { company: "Figma", role: "Software Engineer, Infra" },
+  { company: "Datadog", role: "Platform Engineer" },
+];
+const searchQuery = "notion";
 
 export function SearchPreview() {
   return (
     <div className="overflow-hidden rounded-xl border border-ink/10 bg-paper">
       <MiniAppHeader active="Table" />
       <div className="p-3">
-        <div className="w-40 rounded-[8px] border border-ink/15 bg-paper px-2.5 py-1.5 text-xs text-ink">
+        <div className="w-40 rounded-lg border border-ink/15 bg-paper px-2.5 py-1.5 text-xs text-ink">
           {searchQuery}
         </div>
         <div className="mt-3 flex flex-col gap-1">
           {searchRows.map((row) => {
-            const matches = row.company.toLowerCase().includes(searchQuery)
+            const matches = row.company.toLowerCase().includes(searchQuery);
             return (
               <div
                 key={row.company}
                 className={
-                  'flex items-center gap-2 rounded-[8px] px-2 py-1.5 ' +
-                  (matches ? 'bg-accent/15' : 'opacity-30')
+                  "flex items-center gap-2 rounded-lg px-2 py-1.5 " +
+                  (matches ? "bg-accent/15" : "opacity-30")
                 }
               >
                 <CompanyLogo company={row.company} size={16} />
                 <p className="text-xs font-medium">{row.company}</p>
                 <p className="text-[11px] text-ink/50">{row.role}</p>
               </div>
-            )
+            );
           })}
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-const resumeRows: { label: string; type: string; date: string; isBase: boolean }[] = [
-  { label: 'Base Resume', type: 'PDF', date: 'Aug 2, 2026', isBase: true },
-  { label: 'Backend-focused', type: 'PDF', date: 'Jul 20, 2026', isBase: false },
-]
+const resumeRows: {
+  label: string;
+  type: string;
+  date: string;
+  isBase: boolean;
+}[] = [
+  { label: "Base Resume", type: "PDF", date: "Aug 2, 2026", isBase: true },
+  {
+    label: "Backend-focused",
+    type: "PDF",
+    date: "Jul 20, 2026",
+    isBase: false,
+  },
+];
 
 export function ResumesPreview() {
   return (
@@ -210,11 +274,11 @@ export function ResumesPreview() {
               )}
             </div>
             <span className="text-[11px] font-medium text-ink/40">
-              {resume.isBase ? 'Download' : 'Set as default'}
+              {resume.isBase ? "Download" : "Set as default"}
             </span>
           </div>
         ))}
       </div>
     </div>
-  )
+  );
 }
