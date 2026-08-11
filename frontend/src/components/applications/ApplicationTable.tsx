@@ -1,4 +1,5 @@
 import type { Application } from '../../types/application'
+import { CompanyLogo } from '../ui/CompanyLogo'
 import { StatusBadge } from './StatusBadge'
 
 export function ApplicationTable({
@@ -36,18 +37,21 @@ export function ApplicationTable({
           {applications.map((application) => (
             <tr key={application.id} className="border-b border-ink/5 last:border-0">
               <td className="px-4 py-3 font-medium">
-                {application.job_url ? (
-                  <a
-                    href={application.job_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:underline"
-                  >
-                    {application.company}
-                  </a>
-                ) : (
-                  application.company
-                )}
+                <div className="flex items-center gap-2.5">
+                  <CompanyLogo company={application.company} />
+                  {application.job_url ? (
+                    <a
+                      href={application.job_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="hover:underline"
+                    >
+                      {application.company}
+                    </a>
+                  ) : (
+                    application.company
+                  )}
+                </div>
               </td>
               <td className="px-4 py-3 text-ink/70">{application.role_title}</td>
               <td className="px-4 py-3">

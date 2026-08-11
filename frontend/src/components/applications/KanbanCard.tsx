@@ -2,6 +2,7 @@ import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import clsx from 'clsx'
 import type { Application, ApplicationStatus } from '../../types/application'
+import { CompanyLogo } from '../ui/CompanyLogo'
 
 const stripeColors: Record<ApplicationStatus, string> = {
   saved: 'bg-ink/20',
@@ -48,9 +49,12 @@ export function KanbanCard({
         className={clsx('absolute inset-y-0 left-0 w-1 rounded-l-[10px]', stripeColors[application.status])}
       />
       <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-sm font-medium">{application.company}</p>
-          <p className="mt-0.5 text-xs text-ink/50">{application.role_title}</p>
+        <div className="flex items-center gap-2">
+          <CompanyLogo company={application.company} />
+          <div>
+            <p className="text-sm font-medium">{application.company}</p>
+            <p className="mt-0.5 text-xs text-ink/50">{application.role_title}</p>
+          </div>
         </div>
         <button
           {...attributes}
