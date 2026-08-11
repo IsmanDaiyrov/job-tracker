@@ -1,10 +1,16 @@
 import { StatusBadge } from '../applications/StatusBadge'
+import { CompanyLogo } from '../ui/CompanyLogo'
 import type { ApplicationStatus } from '../../types/application'
 
 // Purely decorative, hardcoded previews for the landing page — not wired to any real data or
-// API. Built from the same design tokens and, where safe, the same components (StatusBadge) as
-// the real app, so it stays visually in sync automatically instead of going stale like a raster
-// screenshot would the next time the UI changes.
+// API. Built from the same design tokens and, where safe, the same components (StatusBadge,
+// CompanyLogo) as the real app, so it stays visually in sync automatically instead of going
+// stale like a raster screenshot would the next time the UI changes.
+//
+// Sample company names here are deliberately picked to resolve correctly through CompanyLogo's
+// domain guess (see that file) — a marketing page is the last place to show off the "wrong logo"
+// edge case, so avoid names like "Linear" that are known to guess wrong (linear.app, not
+// linear.com).
 
 function MiniAppHeader({ active }: { active: 'Table' | 'Board' }) {
   return (
@@ -45,7 +51,7 @@ const boardColumns: { label: string; cards: { company: string; role: string; sta
   {
     label: 'Interview',
     cards: [
-      { company: 'Linear', role: 'Senior Product Engineer', status: 'interview' },
+      { company: 'Anthropic', role: 'Software Engineer', status: 'interview' },
       { company: 'Airbnb', role: 'Senior Software Engineer', status: 'interview' },
     ],
   },
@@ -73,7 +79,10 @@ export function BoardPreview() {
                       'absolute inset-y-0 left-0 w-1 rounded-l-[10px] ' + stripeColors[card.status]
                     }
                   />
-                  <p className="text-xs font-medium">{card.company}</p>
+                  <div className="flex items-center gap-1.5">
+                    <CompanyLogo company={card.company} size={16} />
+                    <p className="text-xs font-medium">{card.company}</p>
+                  </div>
                   <p className="mt-0.5 text-[11px] text-ink/50">{card.role}</p>
                 </div>
               ))}
@@ -108,7 +117,12 @@ export function TablePreview() {
         <tbody>
           {tableRows.map((row) => (
             <tr key={row.company} className="border-b border-ink/5 last:border-0">
-              <td className="px-4 py-2.5 text-xs font-medium">{row.company}</td>
+              <td className="px-4 py-2.5 text-xs font-medium">
+                <div className="flex items-center gap-2">
+                  <CompanyLogo company={row.company} size={16} />
+                  {row.company}
+                </div>
+              </td>
               <td className="px-4 py-2.5 text-xs text-ink/70">{row.role}</td>
               <td className="px-4 py-2.5">
                 <StatusBadge status={row.status} />
