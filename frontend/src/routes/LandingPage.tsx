@@ -1,5 +1,23 @@
 import { Link } from 'react-router-dom'
 import { Button } from '../components/ui/Button'
+import { BoardPreview, TablePreview } from '../components/landing/ProductPreview'
+
+const features = [
+  {
+    title: 'Search across every season',
+    description:
+      "Applied to the same company two years running? Find it instantly instead of digging through old sheets.",
+  },
+  {
+    title: 'Resumes stay attached',
+    description:
+      'Upload the version you actually sent for each application, so you know what they saw.',
+  },
+  {
+    title: 'Sign in your way',
+    description: 'Email and password, or continue with Google or GitHub — whatever you already use.',
+  },
+]
 
 const steps = [
   {
@@ -42,23 +60,28 @@ export function LandingPage() {
       </header>
 
       <section className="mx-auto max-w-6xl px-6 py-24 md:py-32">
-        <div className="max-w-2xl">
-          <h1 className="font-display text-5xl leading-[1.1] md:text-6xl">
-            Your job search, <br />
-            in one place<span className="text-accent">.</span>
-          </h1>
-          <p className="mt-6 max-w-md text-lg text-ink/60">
-            Stop spinning up a new spreadsheet for every application season. Pipeline tracks
-            every company, role, and status in a single board built for the search — not a
-            browser extension, not a spreadsheet.
-          </p>
-          <div className="mt-8 flex items-center gap-4">
-            <Link to="/register">
-              <Button className="px-6 py-3 text-base">Start tracking, free</Button>
-            </Link>
-            <Link to="/login" className="text-sm font-medium text-ink/60 hover:text-ink">
-              I already have an account →
-            </Link>
+        <div className="grid items-center gap-16 lg:grid-cols-[minmax(0,1fr)_480px]">
+          <div>
+            <h1 className="font-display text-5xl leading-[1.1] md:text-6xl">
+              Your job search, <br />
+              in one place<span className="text-accent">.</span>
+            </h1>
+            <p className="mt-6 max-w-md text-lg text-ink/60">
+              Stop spinning up a new spreadsheet for every application season. Pipeline tracks
+              every company, role, and status in a single board built for the search — not a
+              browser extension, not a spreadsheet.
+            </p>
+            <div className="mt-8 flex items-center gap-4">
+              <Link to="/register">
+                <Button className="px-6 py-3 text-base">Start tracking, free</Button>
+              </Link>
+              <Link to="/login" className="text-sm font-medium text-ink/60 hover:text-ink">
+                I already have an account →
+              </Link>
+            </div>
+          </div>
+          <div className="hidden lg:block">
+            <BoardPreview />
           </div>
         </div>
       </section>
@@ -80,6 +103,38 @@ export function LandingPage() {
                 </div>
                 <h3 className="mt-3 font-display text-xl">{step.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-ink/60">{step.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-ink/10">
+        <div className="mx-auto max-w-6xl px-6 py-20">
+          <div className="grid items-center gap-16 lg:grid-cols-[420px_minmax(0,1fr)]">
+            <div className="order-2 lg:order-1">
+              <TablePreview />
+            </div>
+            <div className="order-1 lg:order-2">
+              <h2 className="font-display text-2xl">Table or board — whichever fits how you think.</h2>
+              <p className="mt-3 max-w-md text-sm leading-relaxed text-ink/60">
+                Scan everything at once in a dense table, or drag cards across a board when you
+                just want to know what needs attention today. Same data, same search, switch
+                anytime — nothing gets lost moving between them.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-ink/10">
+        <div className="mx-auto max-w-6xl px-6 py-20">
+          <h2 className="font-display text-2xl">Everything else you'd expect</h2>
+          <div className="mt-10 grid gap-10 md:grid-cols-3 md:gap-6">
+            {features.map((feature) => (
+              <div key={feature.title}>
+                <h3 className="font-display text-xl">{feature.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-ink/60">{feature.description}</p>
               </div>
             ))}
           </div>
