@@ -1,4 +1,5 @@
 import { DndContext, type DragEndEvent } from "@dnd-kit/core";
+import { restrictToFirstScrollableAncestor } from "@dnd-kit/modifiers";
 import {
   APPLICATION_STATUSES,
   type Application,
@@ -27,7 +28,11 @@ export function KanbanBoard({
   };
 
   return (
-    <DndContext onDragEnd={handleDragEnd}>
+    // `useDraggable`'s transform is a raw pointer-delta translate with no
+    // bounds of its own — without this modifier, dragging a card past the
+    // last column just keeps sliding it off-board indefinitely. Clamps it to
+    // the nearest scrollable ancestor, which is the bordered wrapper below.
+    <DndContext onDragEnd={handleDragEnd} modifiers={[restrictToFirstScrollableAncestor]}>
       <div className="overflow-x-auto rounded-xl border border-ink/10">
         <div className="flex divide-x divide-ink/5">
           {APPLICATION_STATUSES.map((status) => (
