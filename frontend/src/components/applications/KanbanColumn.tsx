@@ -17,14 +17,14 @@ export function KanbanColumn({
 
   return (
     <div className="flex w-64 shrink-0 flex-col">
-      <div className="mb-3 flex items-center justify-between px-1">
-        <h3 className="text-sm font-medium text-ink/70">{STATUS_LABELS[status]}</h3>
-        <span className="text-xs text-ink/30">{applications.length}</span>
+      <div className="flex items-center justify-between border-b border-ink/10 px-4 py-3 text-xs uppercase tracking-wide text-ink/40">
+        <h3 className="font-medium">{STATUS_LABELS[status]}</h3>
+        <span>{applications.length}</span>
       </div>
       <div
         ref={setNodeRef}
         className={clsx(
-          'flex min-h-24 flex-1 flex-col gap-2 rounded-xl p-2 transition-colors',
+          'flex min-h-24 flex-1 flex-col gap-2 p-2 transition-colors',
           isOver ? 'bg-ink/5' : 'bg-transparent',
         )}
       >
