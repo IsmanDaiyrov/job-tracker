@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from "react";
 
 // There's no logo field on an application — just a company name — so the domain used to fetch a
 // logo is a guess (lowercase, strip punctuation, assume ".com"). That's right for most
@@ -11,7 +11,12 @@ import { useEffect, useState } from 'react'
 // (Clearbit's old logo.clearbit.com endpoint — the more common choice for this — no longer
 // resolves at all post-HubSpot-acquisition, hence favicons instead of a dedicated logo API.)
 function guessDomain(company: string): string {
-  return company.toLowerCase().replace(/[^a-z0-9]+/g, '') + '.com'
+  return (
+    company.toLowerCase().replace(/[^a-z0-9]+/g, "") + ".com" ||
+    ".io" ||
+    ".org" ||
+    ".net"
+  );
 }
 
 function initials(company: string): string {
@@ -21,19 +26,25 @@ function initials(company: string): string {
       .filter(Boolean)
       .slice(0, 2)
       .map((word) => word[0])
-      .join('')
-      .toUpperCase() || '?'
-  )
+      .join("")
+      .toUpperCase() || "?"
+  );
 }
 
-export function CompanyLogo({ company, size = 20 }: { company: string; size?: number }) {
-  const [failed, setFailed] = useState(false)
+export function CompanyLogo({
+  company,
+  size = 20,
+}: {
+  company: string;
+  size?: number;
+}) {
+  const [failed, setFailed] = useState(false);
 
   // Reset once per company so editing a company name (or reusing this component across a
   // re-rendered list) doesn't get stuck showing the previous company's fallback state.
-  useEffect(() => setFailed(false), [company])
+  useEffect(() => setFailed(false), [company]);
 
-  const style = { width: size, height: size }
+  const style = { width: size, height: size };
 
   if (failed) {
     return (
@@ -43,7 +54,7 @@ export function CompanyLogo({ company, size = 20 }: { company: string; size?: nu
       >
         {initials(company)}
       </span>
-    )
+    );
   }
 
   return (
@@ -54,5 +65,5 @@ export function CompanyLogo({ company, size = 20 }: { company: string; size?: nu
       className="shrink-0 rounded-[6px] border border-ink/10 bg-paper object-contain"
       onError={() => setFailed(true)}
     />
-  )
+  );
 }
