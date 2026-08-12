@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     aws_secret_access_key: str = ""
     aws_s3_bucket: str = ""
 
+    anthropic_api_key: str = ""
+
 # Returns the application settings, cached for performance.
 @lru_cache
 def get_settings() -> Settings:

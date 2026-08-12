@@ -20,3 +20,6 @@ frontend/.vite/
 
 # editor (machine-specific, may contain local DB credentials via SQLTools etc.)
 .vscode/settings.json
+
+# Claude Code tooling config (local dev-server preview setup, not part of the app)
+.claude/launch.json

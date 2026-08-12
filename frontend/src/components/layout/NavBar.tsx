@@ -7,6 +7,7 @@ const links = [
   { to: '/app/table', label: 'Table', preserveSearch: true },
   { to: '/app/board', label: 'Board', preserveSearch: true },
   { to: '/app/resumes', label: 'Resumes', preserveSearch: false },
+  { to: '/app/tailor', label: 'Tailor', preserveSearch: false },
 ]
 
 export function NavBar() {

@@ -11,6 +11,7 @@ import { LoginPage } from './routes/LoginPage'
 import { OAuthCallbackPage } from './routes/OAuthCallbackPage'
 import { RegisterPage } from './routes/RegisterPage'
 import { ResumesPage } from './routes/ResumesPage'
+import { TailorPage } from './routes/TailorPage'
 
 const router = createBrowserRouter([
   { path: '/', element: <LandingPage /> },
@@ -28,6 +29,7 @@ const router = createBrowserRouter([
           { path: 'table', element: <ApplicationsTablePage /> },
           { path: 'board', element: <ApplicationsBoardPage /> },
           { path: 'resumes', element: <ResumesPage /> },
+          { path: 'tailor', element: <TailorPage /> },
         ],
       },
     ],

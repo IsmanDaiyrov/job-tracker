@@ -43,3 +43,9 @@ def generate_presigned_download_url(key: str, expires_in: int = 300) -> str:
 # Permanently delete a file from S3 by its key.
 def delete_object(key: str) -> None:
     _client.delete_object(Bucket=settings.aws_s3_bucket, Key=key)
+
+
+# Fetch a file's raw bytes directly, for server-side processing (e.g. handing a resume to Claude)
+# rather than the presigned-URL pattern used for browser up/downloads.
+def get_object_bytes(key: str) -> bytes:
+    return _client.get_object(Bucket=settings.aws_s3_bucket, Key=key)["Body"].read()

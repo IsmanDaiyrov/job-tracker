@@ -3,7 +3,12 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.s3 import delete_object, generate_presigned_download_url, generate_presigned_upload_url
+from app.core.s3 import (
+    delete_object,
+    generate_presigned_download_url,
+    generate_presigned_upload_url,
+    get_object_bytes,
+)
 from app.core.security import get_current_user
 from app.crud.resume import (
     ALLOWED_CONTENT_TYPES,
@@ -22,6 +27,8 @@ from app.schemas.resume import (
     ResumeUpdate,
     ResumeUploadResponse,
 )
+from app.schemas.tailor import TailorRequest, TailorResult
+from app.services.tailoring import tailor_resume
 
 router = APIRouter(prefix="/resumes", tags=["resumes"])
 
@@ -90,3 +97,12 @@ async def download_my_resume(resume=Depends(_get_owned_resume)):
 async def delete_my_resume(resume=Depends(_get_owned_resume), db: AsyncSession = Depends(get_db)):
     delete_object(resume.s3_key)
     await delete_resume(db, resume)
+
+
+# Tailor a resume against a job description: fetch the file's bytes from S3 and hand them to Claude
+# along with the job description, returning suggested bullet edits and a cover letter draft.
+# Nothing about the request or response is persisted.
+@router.post("/{resume_id}/tailor", response_model=TailorResult)
+async def tailor_my_resume(payload: TailorRequest, resume=Depends(_get_owned_resume)):
+    resume_bytes = get_object_bytes(resume.s3_key)
+    return await tailor_resume(resume_bytes, resume.content_type, payload.job_description)

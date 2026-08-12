@@ -32,4 +32,4 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-# Future routers plug in here: /applications/{id}/tailor, /stats/overview
+# Future routers plug in here: /stats/overview
