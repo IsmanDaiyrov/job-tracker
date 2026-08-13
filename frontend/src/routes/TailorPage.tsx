@@ -4,6 +4,8 @@ import { TailorForm } from '../components/tailor/TailorForm'
 import { TailorResults } from '../components/tailor/TailorResults'
 import { useResumesQuery } from '../hooks/useResumes'
 import { useTailorResume } from '../hooks/useTailor'
+import { loadTailorCache, saveTailorCache } from '../lib/tailorCache'
+import type { TailorResult } from '../types/tailor'
 
 // The /app/tailor page: paste a job description, pick a resume, and get back suggested bullet
 // edits and a cover letter draft from Claude. Standalone rather than tied to a saved application,
@@ -11,8 +13,12 @@ import { useTailorResume } from '../hooks/useTailor'
 // anything) — see TailorResults' footnote for why nothing here is saved automatically.
 export function TailorPage() {
   const { data: resumes, isLoading } = useResumesQuery()
-  const [resumeId, setResumeId] = useState('')
-  const [jobDescription, setJobDescription] = useState('')
+  const [resumeId, setResumeId] = useState(() => loadTailorCache()?.resumeId ?? '')
+  const [jobDescription, setJobDescription] = useState(() => loadTailorCache()?.jobDescription ?? '')
+  // Read straight from cache on mount rather than off the mutation — useMutation has no
+  // equivalent of useQuery's initialData, so there's nothing to rehydrate a mutation's own
+  // .data with. Owning the result as plain state is what makes rehydration possible.
+  const [result, setResult] = useState<TailorResult | null>(() => loadTailorCache()?.result ?? null)
   const tailorMutation = useTailorResume()
 
   useEffect(() => {
@@ -48,7 +54,17 @@ export function TailorPage() {
             onResumeIdChange={setResumeId}
             jobDescription={jobDescription}
             onJobDescriptionChange={setJobDescription}
-            onSubmit={() => tailorMutation.mutate({ resumeId, jobDescription })}
+            onSubmit={() =>
+              tailorMutation.mutate(
+                { resumeId, jobDescription },
+                {
+                  onSuccess: (data) => {
+                    setResult(data)
+                    saveTailorCache({ resumeId, jobDescription, result: data })
+                  },
+                },
+              )
+            }
             isPending={tailorMutation.isPending}
           />
 
@@ -56,7 +72,7 @@ export function TailorPage() {
             <p className="mt-3 text-xs text-coral">Something went wrong. Please try again.</p>
           )}
 
-          {tailorMutation.data && <TailorResults result={tailorMutation.data} />}
+          {result && <TailorResults result={result} />}
         </div>
       )}
     </div>

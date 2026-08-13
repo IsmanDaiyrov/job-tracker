@@ -1,5 +1,6 @@
 import { createContext, useCallback, useEffect, useState, type ReactNode } from 'react'
 import { api, tokenStorage } from '../lib/api'
+import { clearTailorCache } from '../lib/tailorCache'
 import type { User } from '../types/user'
 
 interface AuthContextValue {
@@ -59,6 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     tokenStorage.clear()
+    clearTailorCache()
     setUser(null)
   }, [])
 

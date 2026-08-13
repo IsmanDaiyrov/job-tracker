@@ -55,7 +55,7 @@ async def tailor_resume(resume_bytes: bytes, content_type: str, job_description:
 
     response = await _get_client().messages.parse(
         model="claude-sonnet-5",
-        max_tokens=4096,
+        max_tokens=8192,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": content}],
         output_format=TailorResult,

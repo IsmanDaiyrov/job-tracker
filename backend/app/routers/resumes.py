@@ -1,6 +1,7 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.s3 import (
@@ -105,4 +106,12 @@ async def delete_my_resume(resume=Depends(_get_owned_resume), db: AsyncSession =
 @router.post("/{resume_id}/tailor", response_model=TailorResult)
 async def tailor_my_resume(payload: TailorRequest, resume=Depends(_get_owned_resume)):
     resume_bytes = get_object_bytes(resume.s3_key)
-    return await tailor_resume(resume_bytes, resume.content_type, payload.job_description)
+    try:
+        return await tailor_resume(resume_bytes, resume.content_type, payload.job_description)
+    except ValidationError:
+        # Claude's response was cut off mid-generation before finishing valid JSON — most likely
+        # a very long resume/job description left too little room under max_tokens to finish.
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="The response was cut off before finishing. Try a shorter job description.",
+        )

@@ -1,6 +1,9 @@
 from unittest.mock import patch
 
 from httpx import AsyncClient
+from pydantic import ValidationError
+
+from app.schemas.tailor import TailorResult
 
 
 async def test_create_resume_returns_upload_url(client: AsyncClient, auth_headers: dict[str, str]):
@@ -97,6 +100,32 @@ async def test_tailor_resume(client: AsyncClient, auth_headers: dict[str, str]):
     assert resp.status_code == 200
     assert resp.json() == fake_result
     mock_tailor.assert_called_once_with(b"%PDF-fake", "application/pdf", "Looking for a backend engineer.")
+
+
+async def test_tailor_resume_handles_truncated_output(client: AsyncClient, auth_headers: dict[str, str]):
+    with patch("app.routers.resumes.generate_presigned_upload_url", return_value="https://fake-s3-url/put"):
+        create_resp = await client.post(
+            "/resumes", json={"label": "Base Resume", "content_type": "application/pdf"}, headers=auth_headers
+        )
+    resume_id = create_resp.json()["resume"]["id"]
+
+    try:
+        TailorResult.model_validate_json("{not valid json")
+        truncation_error = None
+    except ValidationError as exc:
+        truncation_error = exc
+
+    with (
+        patch("app.routers.resumes.get_object_bytes", return_value=b"%PDF-fake"),
+        patch("app.routers.resumes.tailor_resume", side_effect=truncation_error),
+    ):
+        resp = await client.post(
+            f"/resumes/{resume_id}/tailor",
+            json={"job_description": "Looking for a backend engineer."},
+            headers=auth_headers,
+        )
+
+    assert resp.status_code == 502
 
 
 async def test_tailor_resume_ownership_enforced(client: AsyncClient, auth_headers: dict[str, str]):
