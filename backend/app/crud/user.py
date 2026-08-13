@@ -1,4 +1,5 @@
 import uuid
+from datetime import date
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,6 +8,10 @@ from app.models.oauth_account import OAuthAccount, OAuthProvider
 from app.models.user import User
 
 # CRUD operations for the User model, including retrieving users by email or ID, creating new users, and managing OAuth accounts linked to users.
+
+# Cap on tailoring requests per account per day, to bound API cost exposure once this app has
+# users other than its own owner. Accounts with unlimited_tailoring set bypass this entirely.
+DAILY_TAILOR_LIMIT = 5
 
 # Retrieve a user by their email address, returning None if not found.
 async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
@@ -68,3 +73,24 @@ async def get_or_create_user_from_oauth(
 
     await link_oauth_account(db, user.id, provider, provider_account_id)
     return user
+
+
+# Check whether a user has tailoring quota left today, consuming one unit of it if so. The
+# counter resets automatically the first time it's checked on a new day — there's no separate
+# cron/scheduled job resetting it. Returns False (without consuming anything) once the daily
+# limit is reached; unlimited_tailoring accounts always return True.
+async def consume_tailor_quota(db: AsyncSession, user: User) -> bool:
+    if user.unlimited_tailoring:
+        return True
+
+    today = date.today()
+    if user.tailor_count_date != today:
+        user.tailor_count = 0
+        user.tailor_count_date = today
+
+    if user.tailor_count >= DAILY_TAILOR_LIMIT:
+        return False
+
+    user.tailor_count += 1
+    await db.commit()
+    return True

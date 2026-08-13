@@ -169,6 +169,10 @@ S3 bucket
 - [ ] **Dashboard** — stats endpoint + charts (status breakdown, response rate, time-in-stage)
 - [ ] **Deploy** — Postgres + API on Render/Fly, frontend on Vercel/Netlify
 
+Before opening the deployed app to real users, do these two together (both about the same failure mode — an account-wide Claude billing cutoff — so no reason to split them across separate sessions):
+- [ ] Set a monthly spend limit on the Anthropic account, in the Console's Billing/Limits settings — a backstop in case per-user rate limiting (already built, see Key design decisions) isn't enough to bound cost.
+- [ ] Catch `anthropic.PermissionDeniedError` (403, `billing_error`) in `routers/resumes.py`'s tailor endpoint, same pattern as the existing `ValidationError` → 502 handling — right now a billing cutoff would surface as an opaque 500 instead of a clear "temporarily unavailable" message, and unlike the per-user rate limit's 429, this failure mode hits every user at once.
+
 ## Project layout
 
 ```

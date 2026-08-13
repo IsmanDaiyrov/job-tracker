@@ -3,6 +3,7 @@ from unittest.mock import patch
 from httpx import AsyncClient
 from pydantic import ValidationError
 
+from app.crud.user import DAILY_TAILOR_LIMIT
 from app.schemas.tailor import TailorResult
 
 
@@ -126,6 +127,31 @@ async def test_tailor_resume_handles_truncated_output(client: AsyncClient, auth_
         )
 
     assert resp.status_code == 502
+
+
+async def test_tailor_resume_rate_limited(client: AsyncClient, auth_headers: dict[str, str]):
+    with patch("app.routers.resumes.generate_presigned_upload_url", return_value="https://fake-s3-url/put"):
+        create_resp = await client.post(
+            "/resumes", json={"label": "Base Resume", "content_type": "application/pdf"}, headers=auth_headers
+        )
+    resume_id = create_resp.json()["resume"]["id"]
+
+    fake_result = {"bullets": [], "cover_letter": "Dear hiring team..."}
+    with (
+        patch("app.routers.resumes.get_object_bytes", return_value=b"%PDF-fake"),
+        patch("app.routers.resumes.tailor_resume", return_value=fake_result),
+    ):
+        for _ in range(DAILY_TAILOR_LIMIT):
+            resp = await client.post(
+                f"/resumes/{resume_id}/tailor", json={"job_description": "test"}, headers=auth_headers
+            )
+            assert resp.status_code == 200
+
+        resp = await client.post(
+            f"/resumes/{resume_id}/tailor", json={"job_description": "test"}, headers=auth_headers
+        )
+
+    assert resp.status_code == 429
 
 
 async def test_tailor_resume_ownership_enforced(client: AsyncClient, auth_headers: dict[str, str]):

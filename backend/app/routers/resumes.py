@@ -19,6 +19,7 @@ from app.crud.resume import (
     list_resumes,
     update_resume,
 )
+from app.crud.user import consume_tailor_quota
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.resume import (
@@ -102,9 +103,22 @@ async def delete_my_resume(resume=Depends(_get_owned_resume), db: AsyncSession =
 
 # Tailor a resume against a job description: fetch the file's bytes from S3 and hand them to Claude
 # along with the job description, returning suggested bullet edits and a cover letter draft.
-# Nothing about the request or response is persisted.
+# Nothing about the request or response is persisted. Rate-limited per account (see
+# crud/user.py) to bound API cost exposure — the resume-ownership check already ties this to a
+# specific user, so quota is checked against that same user.
 @router.post("/{resume_id}/tailor", response_model=TailorResult)
-async def tailor_my_resume(payload: TailorRequest, resume=Depends(_get_owned_resume)):
+async def tailor_my_resume(
+    payload: TailorRequest,
+    resume=Depends(_get_owned_resume),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if not await consume_tailor_quota(db, current_user):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Daily tailoring limit reached. Try again tomorrow.",
+        )
+
     resume_bytes = get_object_bytes(resume.s3_key)
     try:
         return await tailor_resume(resume_bytes, resume.content_type, payload.job_description)
