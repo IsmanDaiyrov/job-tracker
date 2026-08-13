@@ -1,8 +1,8 @@
 # Job Tracker
 
-A single-stop portal for tracking job applications, replacing a spreadsheet-per-search-season habit. Built as a learning project for React/TypeScript, FastAPI, PostgreSQL, and (in later milestones) S3 file storage and Claude-powered resume tailoring.
+A single-stop portal for tracking job applications, replacing a spreadsheet-per-search-season habit. Built as a learning project for React/TypeScript, FastAPI, PostgreSQL, S3 file storage, and Claude-powered resume tailoring.
 
-Foundation phase (this build): application tracking (table + Kanban) with email/password and Google/GitHub sign-in. File storage, AI tailoring, the stats dashboard, and deployment are future milestones.
+Built so far: application tracking (table + Kanban) with email/password and Google/GitHub sign-in, a resume library backed by S3, and AI-assisted resume tailoring against a job description. The stats dashboard and deployment are still future milestones.
 
 ## Stack
 
@@ -73,6 +73,17 @@ Resume/cover letter storage uses real S3 with presigned URLs — the app itself 
    AWS_S3_BUCKET=
    ```
 
+## Claude API setup (needed for resume tailoring)
+
+The Tailor page calls the Claude API directly — the rest of the app works without it, but that one feature needs a real key:
+
+1. Create an API key in the [Anthropic Console](https://console.anthropic.com) (the Individual workspace is fine for local dev; add billing, since usage is pay-as-you-go rather than covered by any claude.ai subscription).
+2. Drop it into `backend/.env`:
+   ```
+   ANTHROPIC_API_KEY=
+   ```
+3. **Restart the backend manually after adding or changing the key.** `Settings` is cached per-process (`@lru_cache` on `get_settings()`), and `uvicorn --reload` only watches `.py` files, not `.env` — so a running dev server won't pick up a new key on its own and will keep failing until it's restarted.
+
 ## Architecture
 
 ### Backend (`backend/app/`)
@@ -86,7 +97,8 @@ Layered by responsibility — each folder only knows about the one below it:
 | Tables | `models/` | SQLAlchemy classes — what the DB tables actually look like |
 | Validation | `schemas/` | Pydantic classes — shape of request/response JSON, separate from the DB models on purpose (see below) |
 | Database queries | `crud/` | The actual `SELECT`/`INSERT`/`UPDATE`/`DELETE` logic, framework-agnostic (no HTTP knowledge) |
-| HTTP endpoints | `routers/` | Parses requests, checks auth, calls `crud/`, returns responses |
+| External API calls | `services/` | Logic that talks to a third-party API rather than the database — currently just `tailoring.py` (Claude). Kept separate from `crud/` since it's not a DB query, and separate from `routers/` so the HTTP layer doesn't own prompt-building or SDK calls directly |
+| HTTP endpoints | `routers/` | Parses requests, checks auth, calls `crud/`/`services/`, returns responses |
 | Schema history | `alembic/` | One migration file per change ever made to the DB schema |
 
 Request flow for anything that touches the database, e.g. `GET /applications`:
@@ -104,11 +116,12 @@ PostgreSQL (Docker)
 
 | Folder | Job |
 |---|---|
-| `routes/` | Full pages — `LandingPage`, `LoginPage`, `ApplicationsTablePage`, `ApplicationsBoardPage`, `ResumesPage`, etc. |
-| `components/` | Reusable pieces used by routes — Kanban card/column, form inputs, nav bar, resume upload form/list |
+| `routes/` | Full pages — `LandingPage`, `LoginPage`, `ApplicationsTablePage`, `ApplicationsBoardPage`, `ResumesPage`, `TailorPage`, etc. |
+| `components/` | Reusable pieces used by routes — Kanban card/column, form inputs, nav bar, resume upload form/list, the tailor form + results panel |
 | `auth/` | Login/session state — `AuthContext` (React Context, not Redux) + `RequireAuth` route guard |
-| `hooks/` | Data-fetching logic — `useApplications.ts` / `useResumes.ts` wrap their respective API calls in React Query; `useApplicationSearch.ts` filters the cached list client-side, with the search term kept in the URL (`?q=`) rather than component state |
+| `hooks/` | Data-fetching logic — `useApplications.ts` / `useResumes.ts` / `useTailor.ts` wrap their respective API calls in React Query; `useApplicationSearch.ts` filters the cached list client-side, with the search term kept in the URL (`?q=`) rather than component state |
 | `lib/api.ts` | The single `axios` instance every network call goes through — attaches the JWT header, handles 401s globally |
+| `lib/tailorCache.ts` | Caches the last successful tailoring result in `sessionStorage` so an accidental refresh doesn't lose it and force a re-generate (a real, billed API call) |
 | `types/` | Shared TypeScript types mirroring the backend's Pydantic schemas |
 
 Request flow for a login click, e.g. `AuthContext.login()`:
@@ -143,12 +156,16 @@ S3 bucket
 - **`core/s3.py` forces the regional S3 endpoint explicitly** (`s3.<region>.amazonaws.com`), rather than letting boto3 default to the legacy global `s3.amazonaws.com`. For any bucket outside `us-east-1`, that default endpoint causes AWS to redirect — and since the browser's `fetch()` PUT is a cross-origin request, that redirect surfaces as a generic CORS error rather than a clear "wrong endpoint" message. Worth knowing if you ever see a CORS failure that a correct CORS config doesn't fix.
 - **Application search is client-side, filtering the already-cached list** — not a `?search=` param on `GET /applications`. At personal-project scale (dozens to a few hundred rows) this is simpler and instant, with no per-keystroke network round-trip. The search term lives in the URL (`?q=`) rather than component state, so it survives switching between Table and Board — `NavBar.tsx`'s links deliberately carry the current `location.search` forward for exactly this reason.
 - **New enum values on a native Postgres enum need a hand-written migration**, not `--autogenerate` — Alembic's default comparator doesn't reliably detect added members on an existing enum type (see the `withdrawn` status migration for the pattern: a bare `ALTER TYPE ... ADD VALUE`, with `downgrade()` left as a no-op since Postgres has no `DROP VALUE`).
+- **Resume tailoring is a standalone page, not an action on an application record.** Tailoring naturally happens *before* you've applied — you paste the job description in fresh each time, tailor, apply on the company's site, and only then log the application — so tying it to a saved application (via an edit modal, say) would put the feature in the wrong place in that sequence.
+- **Nothing about a tailoring request is persisted server-side** — no DB table, no history. The last successful result is cached client-side only, in `sessionStorage` (survives a refresh, clears on tab close or logout), which is enough to protect against losing a result to an accidental refresh without indefinitely storing job description text in the database.
+- **PDF resumes are sent to Claude as a native `document` content block; DOCX resumes are text-extracted locally first** (via `python-docx`) — the Messages API reads PDF natively but has no equivalent for DOCX.
+- **`max_tokens` has real headroom (8192) and truncated responses fail cleanly.** A long resume + long job description can push a structured-output response past a tight token ceiling, which fails JSON validation mid-parse; the router catches that specific failure and returns a clear 502 rather than letting it surface as an opaque 500.
 
 ## Roadmap
 
 - [x] **Foundation** — email/password + Google/GitHub auth, application CRUD, table + Kanban board, landing page
 - [x] **File storage** — resume library, presigned S3 upload/download, verified end-to-end against a real bucket
-- [ ] **AI tailoring** — Claude API integration for tailored bullets + cover letter drafts
+- [x] **AI tailoring** — standalone Tailor page; Claude API integration for tailored bullets + cover letter drafts against a pasted job description
 - [ ] **Dashboard** — stats endpoint + charts (status breakdown, response rate, time-in-stage)
 - [ ] **Deploy** — Postgres + API on Render/Fly, frontend on Vercel/Netlify
 
