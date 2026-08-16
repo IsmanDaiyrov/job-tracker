@@ -1,3 +1,4 @@
+import axios from "axios";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { TailorForm } from "../components/tailor/TailorForm";
@@ -6,6 +7,16 @@ import { useResumesQuery } from "../hooks/useResumes";
 import { useTailorResume } from "../hooks/useTailor";
 import { loadTailorCache, saveTailorCache } from "../lib/tailorCache";
 import type { TailorResult } from "../types/tailor";
+
+// FastAPI's HTTPException responses always carry { detail: "..." } — surface that verbatim
+// (the daily-limit message, the truncation message, etc.) instead of a generic fallback that'd
+// make an intentional, expected condition read as an unexplained bug.
+function getTailorErrorMessage(error: unknown): string {
+  if (axios.isAxiosError(error) && typeof error.response?.data?.detail === "string") {
+    return error.response.data.detail;
+  }
+  return "Something went wrong. Please try again.";
+}
 
 // The /app/tailor page: paste a job description, pick a resume, and get back suggested bullet
 // edits and a cover letter draft from Claude. Standalone rather than tied to a saved application,
@@ -77,7 +88,7 @@ export function TailorPage() {
 
           {tailorMutation.isError && (
             <p className="mt-3 text-xs text-coral">
-              Something went wrong. Please try again.
+              {getTailorErrorMessage(tailorMutation.error)}
             </p>
           )}
 
