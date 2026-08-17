@@ -1,19 +1,19 @@
-import { NavLink, useLocation } from 'react-router-dom'
-import clsx from 'clsx'
-import { useAuth } from '../../auth/useAuth'
-import { Button } from '../ui/Button'
+import { NavLink, useLocation } from "react-router-dom";
+import clsx from "clsx";
+import { useAuth } from "../../auth/useAuth";
+import { Button } from "../ui/Button";
 
 const links = [
-  { to: '/app/table', label: 'Table', preserveSearch: true },
-  { to: '/app/board', label: 'Board', preserveSearch: true },
-  { to: '/app/resumes', label: 'Resumes', preserveSearch: false },
-  { to: '/app/tailor', label: 'Tailor', preserveSearch: false },
-  { to: '/app/dashboard', label: 'Dashboard', preserveSearch: false },
-]
+  { to: "/app/table", label: "Table", preserveSearch: true },
+  { to: "/app/board", label: "Board", preserveSearch: true },
+  { to: "/app/dashboard", label: "Dashboard", preserveSearch: false },
+  { to: "/app/resumes", label: "Resumes", preserveSearch: false },
+  { to: "/app/tailor", label: "Tailor", preserveSearch: false },
+];
 
 export function NavBar() {
-  const { user, logout } = useAuth()
-  const location = useLocation()
+  const { user, logout } = useAuth();
+  const location = useLocation();
 
   return (
     <header className="border-b border-ink/10">
@@ -28,11 +28,17 @@ export function NavBar() {
               key={link.to}
               // Carry the current ?q= search term across Table <-> Board so switching views
               // doesn't lose it — plain string `to` props drop the query string on navigation.
-              to={link.preserveSearch ? { pathname: link.to, search: location.search } : link.to}
+              to={
+                link.preserveSearch
+                  ? { pathname: link.to, search: location.search }
+                  : link.to
+              }
               className={({ isActive }) =>
                 clsx(
-                  'rounded-[10px] px-3 py-1.5 text-sm font-medium transition',
-                  isActive ? 'bg-accent text-ink' : 'text-ink/60 hover:text-ink',
+                  "rounded-[10px] px-3 py-1.5 text-sm font-medium transition",
+                  isActive
+                    ? "bg-accent text-ink"
+                    : "text-ink/60 hover:text-ink",
                 )
               }
             >
@@ -49,5 +55,5 @@ export function NavBar() {
         </div>
       </div>
     </header>
-  )
+  );
 }
