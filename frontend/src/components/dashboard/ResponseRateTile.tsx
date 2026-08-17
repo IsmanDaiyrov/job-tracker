@@ -11,7 +11,7 @@ export function ResponseRateTile({
 }) {
   return (
     <div className="rounded-[10px] border border-ink/10 p-4">
-      <p className="text-xs font-medium text-ink/50">Response rate</p>
+      <p className="text-xs font-medium text-ink/50">Interview rate</p>
       <p className="mt-1 text-3xl font-semibold text-ink">
         {responseRate === null ? '—' : `${Math.round(responseRate * 100)}%`}
       </p>

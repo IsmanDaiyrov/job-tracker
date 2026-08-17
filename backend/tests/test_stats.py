@@ -63,6 +63,34 @@ async def test_status_changed_at_bumps_only_on_status_change(client: AsyncClient
     assert resp.json()["status_changed_at"] != original_status_changed_at
 
 
+async def test_response_rate_excludes_bare_rejections_but_keeps_past_interviews(
+    client: AsyncClient, auth_headers: dict[str, str]
+):
+    # Rejected with no screening/interview in between — a form-letter "no" with zero real
+    # engagement shouldn't count as a "response".
+    bare_reject_resp = await client.post(
+        "/applications", json={"company": "A", "role_title": "SWE"}, headers=auth_headers
+    )
+    await client.patch(
+        f"/applications/{bare_reject_resp.json()['id']}", json={"status": "rejected"}, headers=auth_headers
+    )
+
+    # Reached interview, then rejected — should still count, unlike if this were computed off
+    # current status alone.
+    interviewed_resp = await client.post(
+        "/applications", json={"company": "B", "role_title": "SWE"}, headers=auth_headers
+    )
+    interviewed_id = interviewed_resp.json()["id"]
+    await client.patch(f"/applications/{interviewed_id}", json={"status": "interview"}, headers=auth_headers)
+    await client.patch(f"/applications/{interviewed_id}", json={"status": "rejected"}, headers=auth_headers)
+
+    resp = await client.get("/stats/overview", headers=auth_headers)
+    body = resp.json()
+    assert body["applied_count"] == 2
+    assert body["responded_count"] == 1
+    assert body["response_rate"] == pytest.approx(1 / 2)
+
+
 async def test_stats_overview_interviewed_count(client: AsyncClient, auth_headers: dict[str, str]):
     # Reaches screening, then gets rejected — should still count as interviewed.
     screened_resp = await client.post(

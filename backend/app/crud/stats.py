@@ -7,16 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.application import Application, ApplicationStatus
 
-# Statuses that count as "the company responded", for response-rate purposes. Deliberately
-# excludes 'applied' (no response yet) and 'withdrawn' (the candidate pulled out, which doesn't
-# necessarily mean a response was ever received).
-RESPONDED_STATUSES = {
-    ApplicationStatus.screening,
-    ApplicationStatus.interview,
-    ApplicationStatus.offer,
-    ApplicationStatus.rejected,
-}
-
 
 # Count of applications per status, for a user.
 async def get_status_counts(db: AsyncSession, user_id: uuid.UUID) -> dict[ApplicationStatus, int]:
