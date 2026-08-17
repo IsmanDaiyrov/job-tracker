@@ -28,6 +28,10 @@ class ApplicationUpdate(BaseModel):
     status: ApplicationStatus | None = None
     applied_at: date | None = None
     notes: str | None = None
+    # Manual override for the auto-managed ever_interviewed flag — omit it to let
+    # update_application's normal auto-detection run; only set it to correct a mistake (e.g. the
+    # status was set to Interview by accident and shouldn't have counted).
+    ever_interviewed: bool | None = None
 
 
 class ApplicationRead(ApplicationBase):

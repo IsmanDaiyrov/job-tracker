@@ -20,6 +20,7 @@ const applicationSchema = z.object({
   status: z.enum(APPLICATION_STATUSES),
   applied_at: z.string().optional(),
   notes: z.string().optional(),
+  ever_interviewed: z.boolean().optional(),
 });
 
 export type ApplicationFormValues = z.infer<typeof applicationSchema>;
@@ -32,6 +33,7 @@ const emptyDefaults: ApplicationFormValues = {
   status: "applied",
   applied_at: "",
   notes: "",
+  ever_interviewed: false,
 };
 
 export function ApplicationForm({
@@ -50,7 +52,7 @@ export function ApplicationForm({
     handleSubmit,
     reset,
     control,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, dirtyFields },
   } = useForm<ApplicationFormValues>({
     resolver: zodResolver(applicationSchema),
     defaultValues: emptyDefaults,
@@ -66,12 +68,23 @@ export function ApplicationForm({
         status: initialValues.status,
         applied_at: initialValues.applied_at ?? "",
         notes: initialValues.notes ?? "",
+        ever_interviewed: initialValues.ever_interviewed,
       });
     }
   }, [initialValues, reset]);
 
+  // ever_interviewed is only sent when the checkbox was actually touched — leaving it untouched
+  // omits the field entirely so the backend's normal auto-detection runs unimpeded, rather than
+  // this form's stale loaded value silently overriding it on every save.
+  const submit = handleSubmit((values) =>
+    onSubmit({
+      ...values,
+      ever_interviewed: dirtyFields.ever_interviewed ? values.ever_interviewed : undefined,
+    }),
+  );
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={submit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="company">Company</Label>
@@ -131,6 +144,24 @@ export function ApplicationForm({
           />
         </div>
       </div>
+
+      {initialValues && (
+        <div className="flex items-start gap-2 rounded-[10px] border border-ink/10 p-3">
+          <input
+            id="ever_interviewed"
+            type="checkbox"
+            className="mt-0.5 h-4 w-4 rounded border-ink/30"
+            {...register("ever_interviewed")}
+          />
+          <label htmlFor="ever_interviewed" className="text-sm">
+            <span className="font-medium text-ink">Reached interview stage</span>
+            <p className="text-xs text-ink/50">
+              Normally set automatically when status moves to Screening, Interview, or Offer, and
+              stays checked even if later marked Rejected. Uncheck only to correct a mistake.
+            </p>
+          </label>
+        </div>
+      )}
 
       <div>
         <Label htmlFor="notes">Notes</Label>

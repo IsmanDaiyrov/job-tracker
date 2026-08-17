@@ -15,7 +15,7 @@ export function StatusBreakdownChart({ data }: { data: StatusCount[] }) {
 
   return (
     <div>
-      <h2 className="text-sm font-medium text-ink">Status breakdown</h2>
+      <h2 className="text-sm font-medium text-ink">Current status breakdown</h2>
       <ResponsiveContainer width="100%" height={260}>
         <BarChart data={chartData} layout="vertical" margin={{ top: 8, right: 28, bottom: 0, left: 0 }}>
           <CartesianGrid horizontal={false} stroke="rgba(20,20,31,0.08)" />

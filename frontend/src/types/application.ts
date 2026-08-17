@@ -51,4 +51,5 @@ export interface ApplicationInput {
   status?: ApplicationStatus
   applied_at?: string | null
   notes?: string | null
+  ever_interviewed?: boolean
 }

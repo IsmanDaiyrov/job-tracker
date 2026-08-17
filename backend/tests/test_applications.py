@@ -91,6 +91,42 @@ async def test_ever_interviewed_set_on_create_with_qualifying_status(
     assert resp.json()["ever_interviewed"] is True
 
 
+async def test_ever_interviewed_manual_override_corrects_a_mistake(
+    client: AsyncClient, auth_headers: dict[str, str]
+):
+    create_resp = await client.post(
+        "/applications", json={"company": "Acme", "role_title": "SWE Intern"}, headers=auth_headers
+    )
+    app_id = create_resp.json()["id"]
+
+    # Status mistakenly set to Interview — auto-detection (correctly) flags it.
+    resp = await client.patch(f"/applications/{app_id}", json={"status": "interview"}, headers=auth_headers)
+    assert resp.json()["ever_interviewed"] is True
+
+    # Realized the mistake: fix the status back and explicitly correct the flag in the same request.
+    resp = await client.patch(
+        f"/applications/{app_id}",
+        json={"status": "applied", "ever_interviewed": False},
+        headers=auth_headers,
+    )
+    assert resp.json()["status"] == "applied"
+    assert resp.json()["ever_interviewed"] is False
+
+
+async def test_ever_interviewed_untouched_field_does_not_block_auto_detection(
+    client: AsyncClient, auth_headers: dict[str, str]
+):
+    create_resp = await client.post(
+        "/applications", json={"company": "Acme", "role_title": "SWE Intern"}, headers=auth_headers
+    )
+    app_id = create_resp.json()["id"]
+
+    # Omitting ever_interviewed entirely must not suppress auto-detection — this is the normal
+    # edit path (the frontend only includes it when the checkbox was actually touched).
+    resp = await client.patch(f"/applications/{app_id}", json={"status": "screening"}, headers=auth_headers)
+    assert resp.json()["ever_interviewed"] is True
+
+
 async def test_applications_scoped_per_user(client: AsyncClient, auth_headers: dict[str, str]):
     await client.post("/applications", json={"company": "Acme", "role_title": "SWE Intern"}, headers=auth_headers)
 
