@@ -53,6 +53,44 @@ async def test_delete_application(client: AsyncClient, auth_headers: dict[str, s
     assert resp.status_code == 404
 
 
+async def test_ever_interviewed_stays_true_after_rejection(client: AsyncClient, auth_headers: dict[str, str]):
+    create_resp = await client.post(
+        "/applications", json={"company": "Acme", "role_title": "SWE Intern"}, headers=auth_headers
+    )
+    app_id = create_resp.json()["id"]
+    assert create_resp.json()["ever_interviewed"] is False
+
+    resp = await client.patch(f"/applications/{app_id}", json={"status": "interview"}, headers=auth_headers)
+    assert resp.json()["ever_interviewed"] is True
+
+    # Rejected afterward — the flag must survive, unlike `status` itself.
+    resp = await client.patch(f"/applications/{app_id}", json={"status": "rejected"}, headers=auth_headers)
+    assert resp.json()["status"] == "rejected"
+    assert resp.json()["ever_interviewed"] is True
+
+
+async def test_ever_interviewed_not_set_by_bare_rejection(client: AsyncClient, auth_headers: dict[str, str]):
+    create_resp = await client.post(
+        "/applications", json={"company": "Acme", "role_title": "SWE Intern"}, headers=auth_headers
+    )
+    app_id = create_resp.json()["id"]
+
+    # Straight to rejected, no screening/interview/offer in between.
+    resp = await client.patch(f"/applications/{app_id}", json={"status": "rejected"}, headers=auth_headers)
+    assert resp.json()["ever_interviewed"] is False
+
+
+async def test_ever_interviewed_set_on_create_with_qualifying_status(
+    client: AsyncClient, auth_headers: dict[str, str]
+):
+    resp = await client.post(
+        "/applications",
+        json={"company": "Acme", "role_title": "SWE Intern", "status": "interview"},
+        headers=auth_headers,
+    )
+    assert resp.json()["ever_interviewed"] is True
+
+
 async def test_applications_scoped_per_user(client: AsyncClient, auth_headers: dict[str, str]):
     await client.post("/applications", json={"company": "Acme", "role_title": "SWE Intern"}, headers=auth_headers)
 

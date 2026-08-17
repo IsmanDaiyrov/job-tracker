@@ -12,7 +12,8 @@ import type { Application, ApplicationStatus } from "../types/application";
 
 export function ApplicationsBoardPage() {
   const { data: applications, isLoading } = useApplicationsQuery();
-  const { query, setQuery, filtered } = useApplicationSearch(applications);
+  const { query, setQuery, interviewedOnly, setInterviewedOnly, filtered } =
+    useApplicationSearch(applications);
   const updateMutation = useUpdateApplication();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Application | null>(null);
@@ -43,6 +44,12 @@ export function ApplicationsBoardPage() {
               placeholder="Search by company or role…"
             />
           </div>
+          <Button
+            variant={interviewedOnly ? "primary" : "ghost"}
+            onClick={() => setInterviewedOnly(!interviewedOnly)}
+          >
+            Interviewed
+          </Button>
           <Button onClick={openAddModal}>Add application</Button>
         </div>
       </div>

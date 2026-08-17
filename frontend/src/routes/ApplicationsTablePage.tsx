@@ -12,7 +12,8 @@ import type { Application } from "../types/application";
 
 export function ApplicationsTablePage() {
   const { data: applications, isLoading } = useApplicationsQuery();
-  const { query, setQuery, filtered } = useApplicationSearch(applications);
+  const { query, setQuery, interviewedOnly, setInterviewedOnly, filtered } =
+    useApplicationSearch(applications);
   const deleteMutation = useDeleteApplication();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Application | null>(null);
@@ -39,6 +40,12 @@ export function ApplicationsTablePage() {
               placeholder="Search by company or role…"
             />
           </div>
+          <Button
+            variant={interviewedOnly ? "primary" : "ghost"}
+            onClick={() => setInterviewedOnly(!interviewedOnly)}
+          >
+            Interviewed
+          </Button>
           <Button onClick={openAddModal}>Add application</Button>
         </div>
       </div>
@@ -58,7 +65,9 @@ export function ApplicationsTablePage() {
           emptyMessage={
             query
               ? "No applications match your search."
-              : "No applications yet. Add your first one to get started."
+              : interviewedOnly
+                ? "No applications have reached interview stage yet."
+                : "No applications yet. Add your first one to get started."
           }
         />
         // </div>

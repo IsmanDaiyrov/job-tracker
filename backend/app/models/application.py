@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import date, datetime
 
-from sqlalchemy import Enum, ForeignKey, Text, func
+from sqlalchemy import Boolean, Enum, ForeignKey, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -37,5 +37,14 @@ class Application(Base):
     )
     applied_at: Mapped[date | None]
     notes: Mapped[str | None] = mapped_column(Text)
+    # When `status` was last changed — distinct from `updated_at`, which bumps on *any* edit
+    # (e.g. editing notes). Used for the "time in stage" dashboard stat; see crud/application.py
+    # for where this actually gets updated.
+    status_changed_at: Mapped[datetime] = mapped_column(server_default=func.now(), nullable=False)
+    # One-way flag: set true the first time status reaches screening/interview/offer, and never
+    # unset even if status later moves to rejected — so "how many companies did I ever interview
+    # with" survives a later rejection, unlike the current `status` field. See
+    # crud/application.py's INTERVIEWED_STATUSES for exactly which statuses trigger it.
+    ever_interviewed: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())

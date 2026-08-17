@@ -33,6 +33,8 @@ class ApplicationUpdate(BaseModel):
 class ApplicationRead(ApplicationBase):
     id: uuid.UUID
     user_id: uuid.UUID
+    status_changed_at: datetime
+    ever_interviewed: bool
     created_at: datetime
     updated_at: datetime
 

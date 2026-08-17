@@ -37,6 +37,8 @@ export interface Application {
   status: ApplicationStatus
   applied_at: string | null
   notes: string | null
+  status_changed_at: string
+  ever_interviewed: boolean
   created_at: string
   updated_at: string
 }

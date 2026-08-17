@@ -6,6 +6,7 @@ import { queryClient } from './lib/queryClient'
 import { ApplicationsBoardPage } from './routes/ApplicationsBoardPage'
 import { ApplicationsTablePage } from './routes/ApplicationsTablePage'
 import { DashboardLayout } from './routes/DashboardLayout'
+import { DashboardPage } from './routes/DashboardPage'
 import { LandingPage } from './routes/LandingPage'
 import { LoginPage } from './routes/LoginPage'
 import { OAuthCallbackPage } from './routes/OAuthCallbackPage'
@@ -30,6 +31,7 @@ const router = createBrowserRouter([
           { path: 'board', element: <ApplicationsBoardPage /> },
           { path: 'resumes', element: <ResumesPage /> },
           { path: 'tailor', element: <TailorPage /> },
+          { path: 'dashboard', element: <DashboardPage /> },
         ],
       },
     ],
