@@ -1,8 +1,9 @@
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# Settings class for application configuration, loaded from environment variables or a .env file. 
+# Settings class for application configuration, loaded from environment variables or a .env file.
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -23,6 +24,18 @@ class Settings(BaseSettings):
     aws_s3_bucket: str = ""
 
     anthropic_api_key: str = ""
+
+    # Managed Postgres providers (Render, Railway, Heroku, ...) hand out connection strings as
+    # postgres:// or postgresql://, not the asyncpg-specific scheme this app's async engine and
+    # Alembic both need — rewrite it here so the raw provider URL can be pasted in as-is.
+    @field_validator("database_url")
+    @classmethod
+    def _use_asyncpg_driver(cls, v: str) -> str:
+        if v.startswith("postgres://"):
+            return "postgresql+asyncpg://" + v[len("postgres://") :]
+        if v.startswith("postgresql://"):
+            return "postgresql+asyncpg://" + v[len("postgresql://") :]
+        return v
 
 # Returns the application settings, cached for performance.
 @lru_cache

@@ -1,0 +1,56 @@
+databases:
+  - name: job-tracker-db
+    plan: free
+    databaseName: job_tracker
+    user: job_tracker
+
+services:
+  - type: web
+    name: job-tracker-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    # Runs once per deploy, before the new instance takes traffic — the right place for
+    # migrations, unlike chaining `alembic upgrade head &&` onto startCommand (which would
+    # rerun on every process restart, not just deploys).
+    preDeployCommand: alembic upgrade head
+    # --proxy-headers/--forwarded-allow-ips: Render terminates TLS in front of the container and
+    # forwards plain HTTP, so without trusting X-Forwarded-Proto, Authlib's request.url_for() in
+    # routers/auth.py would build OAuth redirect_uris as http:// instead of https:// — a mismatch
+    # Google/GitHub reject outright.
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips='*'
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: job-tracker-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "60"
+      # Set once the Vercel deploy exists — see the README's Deployment section for the
+      # chicken-and-egg order this has to happen in.
+      - key: FRONTEND_URL
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      - key: AWS_REGION
+        value: us-east-1
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_S3_BUCKET
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false

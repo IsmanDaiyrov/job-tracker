@@ -84,6 +84,33 @@ The Tailor page calls the Claude API directly — the rest of the app works with
    ```
 3. **Restart the backend manually after adding or changing the key.** `Settings` is cached per-process (`@lru_cache` on `get_settings()`), and `uvicorn --reload` only watches `.py` files, not `.env` — so a running dev server won't pick up a new key on its own and will keep failing until it's restarted.
 
+## Deployment
+
+Backend (FastAPI + Postgres) on **Render**, frontend (static Vite build) on **Vercel**. There's no CI/CD pipeline — these are manual, one-time setup steps; both platforms auto-deploy on future pushes to `main` once connected. (Check current Render/Vercel pricing before committing — free tiers and their limits change.)
+
+**Order matters.** Backend and frontend each need to know the other's URL (CORS + OAuth redirect target on one side, API base URL on the other), and neither exists until you deploy it — so: deploy the backend first, deploy the frontend pointing at it, then circle back and update the backend with the frontend's real URL.
+
+### 1. Backend — Render
+
+1. Push this repo to GitHub, then in the [Render dashboard](https://dashboard.render.com) choose **New → Blueprint** and point it at the repo. It reads [`render.yaml`](render.yaml) and provisions a Postgres database plus a web service together.
+2. Render will prompt for the env vars marked `sync: false` in `render.yaml` — fill in `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID`/`GITHUB_CLIENT_SECRET`, `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`/`AWS_S3_BUCKET`, and `ANTHROPIC_API_KEY` (same values as your local `.env`). `DATABASE_URL` and `JWT_SECRET` are wired up automatically — leave `FRONTEND_URL` blank for now, it gets set in step 3.
+3. Once it's deployed, confirm `https://<your-service>.onrender.com/health` returns `{"status":"ok"}`.
+
+### 2. Frontend — Vercel
+
+1. [Import the repo](https://vercel.com/new) into Vercel. This is a monorepo, so set **Root Directory** to `frontend` in the project settings — Vercel's Vite preset auto-detects from there.
+2. Add an environment variable `VITE_API_BASE_URL` set to the Render URL from step 1 (e.g. `https://job-tracker-api.onrender.com`).
+3. Deploy. `frontend/vercel.json` adds the SPA fallback rewrite so client-side routes like `/app/dashboard` don't 404 on a direct load or page refresh.
+
+### 3. Wire the two together
+
+1. Back in Render, set the web service's `FRONTEND_URL` env var to the Vercel URL (e.g. `https://job-tracker.vercel.app`) and trigger a manual redeploy — `app/main.py`'s CORS config and `routers/auth.py`'s OAuth-callback redirect both read this at startup.
+2. **Google**: in the [Cloud Console credentials page](https://console.cloud.google.com/apis/credentials), add `https://<your-render-service>.onrender.com/auth/google/callback` as an additional authorized redirect URI on the same OAuth client — Google allows multiple, so the `localhost:8000` one for local dev keeps working alongside it.
+3. **GitHub**: OAuth Apps only allow *one* callback URL each — register a **second, separate OAuth App** for production (callback `https://<your-render-service>.onrender.com/auth/github/callback`) instead of overwriting the dev one, and put its client id/secret in Render's env vars rather than the dev app's.
+4. **S3 CORS**: add the Vercel origin to the bucket's `AllowedOrigins` (see [AWS S3 setup](#aws-s3-setup-needed-for-resume-uploads) above) — resume uploads are a direct browser→S3 PUT via presigned URL, so the `localhost:5173`-only CORS config from local dev won't cover production uploads.
+
+Both pre-launch Claude billing safety items (graceful 403 handling, a monthly spend limit on the Anthropic account) are already done — see the Roadmap below.
+
 ## Architecture
 
 ### Backend (`backend/app/`)
@@ -160,6 +187,7 @@ S3 bucket
 - **Nothing about a tailoring request is persisted server-side** — no DB table, no history. The last successful result is cached client-side only, in `sessionStorage` (survives a refresh, clears on tab close or logout), which is enough to protect against losing a result to an accidental refresh without indefinitely storing job description text in the database.
 - **PDF resumes are sent to Claude as a native `document` content block; DOCX resumes are text-extracted locally first** (via `python-docx`) — the Messages API reads PDF natively but has no equivalent for DOCX.
 - **`max_tokens` has real headroom (8192) and truncated responses fail cleanly.** A long resume + long job description can push a structured-output response past a tight token ceiling, which fails JSON validation mid-parse; the router catches that specific failure and returns a clear 502 rather than letting it surface as an opaque 500.
+- **An account-wide Claude billing cutoff (a 403 `anthropic.PermissionDeniedError`) is caught separately from per-user rate limiting.** The daily quota (`crud/user.py`) bounds one account's usage and fails with a 429; a billing cutoff is a different failure mode entirely — it hits every user at once regardless of their own quota — so it gets its own 503 "temporarily unavailable" response instead of surfacing as an opaque 500.
 
 ## Roadmap
 
@@ -169,9 +197,9 @@ S3 bucket
 - [x] **Dashboard** — stats endpoint + charts (status breakdown, time-in-stage); interview rate and persistent "companies interviewed" tracking that survives a later rejection, with a manual-override escape hatch and a "Waiting" status for interviewed applications pending a reply
 - [ ] **Deploy** — Postgres + API on Render/Fly, frontend on Vercel/Netlify
 
-Before opening the deployed app to real users, do these two together (both about the same failure mode — an account-wide Claude billing cutoff — so no reason to split them across separate sessions):
-- [ ] Set a monthly spend limit on the Anthropic account, in the Console's Billing/Limits settings — a backstop in case per-user rate limiting (already built, see Key design decisions) isn't enough to bound cost.
-- [ ] Catch `anthropic.PermissionDeniedError` (403, `billing_error`) in `routers/resumes.py`'s tailor endpoint, same pattern as the existing `ValidationError` → 502 handling — right now a billing cutoff would surface as an opaque 500 instead of a clear "temporarily unavailable" message, and unlike the per-user rate limit's 429, this failure mode hits every user at once.
+Before opening the deployed app to real users, two things were done about the same failure mode — an account-wide Claude billing cutoff:
+- [x] Catch `anthropic.PermissionDeniedError` (403 — `billing_error` or `permission_error`) in `routers/resumes.py`'s tailor endpoint, same pattern as the existing `ValidationError` → 502 handling — a billing cutoff now returns a clear 503 "temporarily unavailable" instead of an opaque 500, and unlike the per-user rate limit's 429, this failure mode hits every user at once.
+- [x] Set a monthly spend limit on the Anthropic account (Console → Billing/Limits), plus auto-reload so a mid-cycle balance dip doesn't itself trip the 403 path above — a backstop in case per-user rate limiting (already built, see Key design decisions) isn't enough to bound cost on its own.
 
 ## Project layout
 

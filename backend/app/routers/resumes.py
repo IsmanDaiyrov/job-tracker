@@ -1,5 +1,6 @@
 import uuid
 
+import anthropic
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -128,4 +129,13 @@ async def tailor_my_resume(
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="The response was cut off before finishing. Try a shorter job description.",
+        )
+    except anthropic.PermissionDeniedError:
+        # A 403 from Claude — most likely the account's spend limit was hit or billing is
+        # otherwise cut off. Unlike the per-user 429 rate limit above, this failure mode hits
+        # every user at once, so it needs its own clear message rather than surfacing as a
+        # generic 500.
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Resume tailoring is temporarily unavailable. Please try again later.",
         )
