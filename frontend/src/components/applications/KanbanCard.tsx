@@ -9,6 +9,7 @@ const stripeColors: Record<ApplicationStatus, string> = {
   applied: 'bg-ink/20',
   screening: 'bg-accent',
   interview: 'bg-accent',
+  waiting: 'bg-amber-400',
   offer: 'bg-sage',
   rejected: 'bg-coral',
   withdrawn: 'bg-ink/10',

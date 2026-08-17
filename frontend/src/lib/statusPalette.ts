@@ -7,6 +7,7 @@ export const STATUS_ORDER: ApplicationStatus[] = [
   'applied',
   'screening',
   'interview',
+  'waiting',
   'offer',
   'rejected',
   'withdrawn',
@@ -16,13 +17,16 @@ export const STATUS_ORDER: ApplicationStatus[] = [
 // StatusBadge.tsx's existing badge colors but darkened for solid fills: a light badge chip with
 // dark text needs far less contrast against the paper background than a large solid bar fill
 // does. Each validated at >=3:1 WCAG contrast against --color-paper (#faf8f3), except
-// `withdrawn`, which is deliberately the most muted/receding of the seven (an inactive,
+// `withdrawn`, which is deliberately the most muted/receding of the eight (an inactive,
 // dismissed record) — its lower contrast is mitigated by the mandatory value label on every bar.
+// `waiting` uses a distinct amber/gold hue (~4.0:1 contrast) to stand apart from the green
+// funnel-progress family and the red rejection color — a "pending" state, not a stage.
 export const STATUS_CHART_COLORS: Record<ApplicationStatus, string> = {
   saved: '#8f8f83',
   applied: '#5c5c50',
   screening: '#7c8f1a',
   interview: '#57661a',
+  waiting: '#a3720a',
   offer: '#7c9473',
   rejected: '#d94a36',
   withdrawn: '#a8a89c',

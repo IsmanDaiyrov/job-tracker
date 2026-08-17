@@ -3,6 +3,7 @@ export type ApplicationStatus =
   | 'applied'
   | 'screening'
   | 'interview'
+  | 'waiting'
   | 'offer'
   | 'rejected'
   | 'withdrawn'
@@ -12,6 +13,7 @@ export const APPLICATION_STATUSES: ApplicationStatus[] = [
   'applied',
   'screening',
   'interview',
+  'waiting',
   'offer',
   'rejected',
   'withdrawn',
@@ -22,6 +24,7 @@ export const STATUS_LABELS: Record<ApplicationStatus, string> = {
   applied: 'Applied',
   screening: 'Screening',
   interview: 'Interview',
+  waiting: 'Waiting',
   offer: 'Offer',
   rejected: 'Rejected',
   withdrawn: 'Withdrawn',

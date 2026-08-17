@@ -13,7 +13,12 @@ from app.schemas.application import ApplicationCreate, ApplicationUpdate
 # Statuses that count as "reached interview stage" for ever_interviewed purposes — a bare
 # rejection with no screening/interview never sets it, matching the old spreadsheet's separate
 # Interviewed column, which a straight-to-rejected company never touched.
-INTERVIEWED_STATUSES = {ApplicationStatus.screening, ApplicationStatus.interview, ApplicationStatus.offer}
+INTERVIEWED_STATUSES = {
+    ApplicationStatus.screening,
+    ApplicationStatus.interview,
+    ApplicationStatus.waiting,
+    ApplicationStatus.offer,
+}
 
 # List all applications for a specific user, ordered by creation date in descending order.
 async def list_applications(db: AsyncSession, user_id: uuid.UUID) -> list[Application]:

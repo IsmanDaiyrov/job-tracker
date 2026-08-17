@@ -7,6 +7,7 @@ const statusColors: Record<ApplicationStatus, string> = {
   applied: 'bg-ink/10 text-ink/70',
   screening: 'bg-accent/30 text-ink',
   interview: 'bg-accent/30 text-ink',
+  waiting: 'bg-amber-100 text-amber-700',
   offer: 'bg-sage/20 text-sage',
   rejected: 'bg-coral/15 text-coral',
   withdrawn: 'bg-ink/5 text-ink/40',

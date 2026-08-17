@@ -156,8 +156,9 @@ export function ApplicationForm({
           <label htmlFor="ever_interviewed" className="text-sm">
             <span className="font-medium text-ink">Reached interview stage</span>
             <p className="text-xs text-ink/50">
-              Normally set automatically when status moves to Screening, Interview, or Offer, and
-              stays checked even if later marked Rejected. Uncheck only to correct a mistake.
+              Normally set automatically when status moves to Screening, Interview, Waiting, or
+              Offer, and stays checked even if later marked Rejected. Uncheck only to correct a
+              mistake.
             </p>
           </label>
         </div>

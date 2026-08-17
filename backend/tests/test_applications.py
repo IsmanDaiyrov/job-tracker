@@ -91,6 +91,18 @@ async def test_ever_interviewed_set_on_create_with_qualifying_status(
     assert resp.json()["ever_interviewed"] is True
 
 
+async def test_ever_interviewed_set_by_waiting_status(client: AsyncClient, auth_headers: dict[str, str]):
+    create_resp = await client.post(
+        "/applications", json={"company": "Acme", "role_title": "SWE Intern"}, headers=auth_headers
+    )
+    app_id = create_resp.json()["id"]
+
+    # "Waiting" means interviewed and pending a reply — it must count the same as interview/offer.
+    resp = await client.patch(f"/applications/{app_id}", json={"status": "waiting"}, headers=auth_headers)
+    assert resp.json()["status"] == "waiting"
+    assert resp.json()["ever_interviewed"] is True
+
+
 async def test_ever_interviewed_manual_override_corrects_a_mistake(
     client: AsyncClient, auth_headers: dict[str, str]
 ):
