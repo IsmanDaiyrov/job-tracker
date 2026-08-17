@@ -2,13 +2,13 @@
 
 A single-stop portal for tracking job applications, replacing a spreadsheet-per-search-season habit. Built as a learning project for React/TypeScript, FastAPI, PostgreSQL, S3 file storage, and Claude-powered resume tailoring.
 
-Built so far: application tracking (table + Kanban) with email/password and Google/GitHub sign-in, a resume library backed by S3, and AI-assisted resume tailoring against a job description. The stats dashboard and deployment are still future milestones.
+Live at [job-tracker-nine-coral.vercel.app](https://job-tracker-nine-coral.vercel.app). Built so far: application tracking (table + Kanban, plus a persistent "companies interviewed" list and a "Waiting" status for tracking who you're still waiting to hear back from) with email/password and Google/GitHub sign-in, a resume library backed by S3, AI-assisted resume tailoring against a job description, and a stats dashboard (status breakdown, interview rate, time-in-stage).
 
 ## Stack
 
 - Frontend: React + TypeScript (Vite), Tailwind CSS v4, react-query, react-router
 - Backend: FastAPI, SQLAlchemy 2.0 (async), Alembic, Authlib (OAuth), PyJWT
-- Database: PostgreSQL (local via Docker Compose)
+- Database: PostgreSQL (local via Docker Compose; Render-managed Postgres in production)
 
 ## Local setup
 
@@ -86,7 +86,9 @@ The Tailor page calls the Claude API directly — the rest of the app works with
 
 ## Deployment
 
-Backend (FastAPI + Postgres) on **Render**, frontend (static Vite build) on **Vercel**. There's no CI/CD pipeline — these are manual, one-time setup steps; both platforms auto-deploy on future pushes to `main` once connected. (Check current Render/Vercel pricing before committing — free tiers and their limits change.)
+**Live:** frontend at [job-tracker-nine-coral.vercel.app](https://job-tracker-nine-coral.vercel.app), backend at `https://job-tracker-api-lf4j.onrender.com`. Both auto-deploy on every push to `main` now that they're connected — no separate CI/CD pipeline needed.
+
+Backend (FastAPI + Postgres) on **Render**, frontend (static Vite build) on **Vercel**. The steps below are what it took to set this up from scratch — kept here in case you ever need to redeploy on a new account (Render/Vercel project deleted, forking this repo, etc.). (Check current Render/Vercel pricing before relying on the free tiers — limits change.)
 
 **Order matters.** Backend and frontend each need to know the other's URL (CORS + OAuth redirect target on one side, API base URL on the other), and neither exists until you deploy it — so: deploy the backend first, deploy the frontend pointing at it, then circle back and update the backend with the frontend's real URL.
 
@@ -99,7 +101,7 @@ Backend (FastAPI + Postgres) on **Render**, frontend (static Vite build) on **Ve
 ### 2. Frontend — Vercel
 
 1. [Import the repo](https://vercel.com/new) into Vercel. This is a monorepo, so set **Root Directory** to `frontend` in the project settings — Vercel's Vite preset auto-detects from there.
-2. Add an environment variable `VITE_API_BASE_URL` set to the Render URL from step 1 (e.g. `https://job-tracker-api.onrender.com`).
+2. Add an environment variable `VITE_API_BASE_URL` set to the Render URL from step 1 (e.g. `https://job-tracker-api.onrender.com`). Vercel's auto-detection may also surface `POSTGRES_*` keys it found by scanning the root [`docker-compose.yml`](docker-compose.yml) (local dev Postgres config) — remove those, they're irrelevant to the frontend build. `VITE_API_BASE_URL` is the only variable this app actually needs.
 3. Deploy. `frontend/vercel.json` adds the SPA fallback rewrite so client-side routes like `/app/dashboard` don't 404 on a direct load or page refresh.
 
 ### 3. Wire the two together
@@ -177,7 +179,7 @@ S3 bucket
 
 - **ORM models and Pydantic schemas are kept separate** (`models/` vs `schemas/`), even though it's more files — this lets API responses diverge from DB columns (e.g. hiding `password_hash`) without reshaping the database.
 - **Auth state uses React Context, not Redux.** Redux solves *client* state; your applications data is *server* state (it lives in Postgres, the frontend just caches it), which is what React Query is purpose-built for. Auth session data is small and rarely changes, so Context is enough on its own.
-- **JWT lives in `localStorage`**, not an httpOnly cookie — simpler for local dev across different ports (`5173` frontend, `8000` backend); flagged as a hardening item before any real deployment.
+- **JWT lives in `localStorage`**, not an httpOnly cookie — simpler for local dev across different ports (`5173` frontend, `8000` backend). Still true in production as deployed — a known hardening gap (a token in `localStorage` is readable by any script that achieves XSS, unlike an httpOnly cookie), not yet addressed.
 - **Native Postgres enums** (`ApplicationStatus`, `OAuthProvider`) instead of plain strings — DB-level validation, at the cost of enum changes needing a slightly more careful migration later.
 - **Resume rows are created optimistically, before the S3 upload happens** — not a two-step presign-then-confirm state machine. A failed upload can leave an orphaned DB row with no matching S3 object (harmless, just delete it), which is a simpler tradeoff than adding a `pending`/`complete` status column for a solo-user app.
 - **`core/s3.py` forces the regional S3 endpoint explicitly** (`s3.<region>.amazonaws.com`), rather than letting boto3 default to the legacy global `s3.amazonaws.com`. For any bucket outside `us-east-1`, that default endpoint causes AWS to redirect — and since the browser's `fetch()` PUT is a cross-origin request, that redirect surfaces as a generic CORS error rather than a clear "wrong endpoint" message. Worth knowing if you ever see a CORS failure that a correct CORS config doesn't fix.
@@ -195,11 +197,14 @@ S3 bucket
 - [x] **File storage** — resume library, presigned S3 upload/download, verified end-to-end against a real bucket
 - [x] **AI tailoring** — standalone Tailor page; Claude API integration for tailored bullets + cover letter drafts against a pasted job description
 - [x] **Dashboard** — stats endpoint + charts (status breakdown, time-in-stage); interview rate and persistent "companies interviewed" tracking that survives a later rejection, with a manual-override escape hatch and a "Waiting" status for interviewed applications pending a reply
-- [ ] **Deploy** — Postgres + API on Render/Fly, frontend on Vercel/Netlify
+- [x] **Deploy** — Postgres + API on Render, frontend on Vercel; live at [job-tracker-nine-coral.vercel.app](https://job-tracker-nine-coral.vercel.app), verified end-to-end (register/login, application CRUD, dashboard stats, SPA routing) against the real production stack
 
 Before opening the deployed app to real users, two things were done about the same failure mode — an account-wide Claude billing cutoff:
 - [x] Catch `anthropic.PermissionDeniedError` (403 — `billing_error` or `permission_error`) in `routers/resumes.py`'s tailor endpoint, same pattern as the existing `ValidationError` → 502 handling — a billing cutoff now returns a clear 503 "temporarily unavailable" instead of an opaque 500, and unlike the per-user rate limit's 429, this failure mode hits every user at once.
 - [x] Set a monthly spend limit on the Anthropic account (Console → Billing/Limits), plus auto-reload so a mid-cycle balance dip doesn't itself trip the 403 path above — a backstop in case per-user rate limiting (already built, see Key design decisions) isn't enough to bound cost on its own.
+
+Known limitation, not yet addressed:
+- [ ] JWT auth token lives in `localStorage`, not an httpOnly cookie (see Key design decisions) — readable by any script that achieves XSS. Low urgency for a personal app with a small, trusted user base, but worth hardening before opening this up more broadly.
 
 ## Project layout
 
