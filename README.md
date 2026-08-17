@@ -166,7 +166,7 @@ S3 bucket
 - [x] **Foundation** — email/password + Google/GitHub auth, application CRUD, table + Kanban board, landing page
 - [x] **File storage** — resume library, presigned S3 upload/download, verified end-to-end against a real bucket
 - [x] **AI tailoring** — standalone Tailor page; Claude API integration for tailored bullets + cover letter drafts against a pasted job description
-- [ ] **Dashboard** — stats endpoint + charts (status breakdown, response rate, time-in-stage)
+- [x] **Dashboard** — stats endpoint + charts (status breakdown, time-in-stage); interview rate and persistent "companies interviewed" tracking that survives a later rejection, with a manual-override escape hatch and a "Waiting" status for interviewed applications pending a reply
 - [ ] **Deploy** — Postgres + API on Render/Fly, frontend on Vercel/Netlify
 
 Before opening the deployed app to real users, do these two together (both about the same failure mode — an account-wide Claude billing cutoff — so no reason to split them across separate sessions):
