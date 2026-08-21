@@ -2,7 +2,7 @@
 
 A single-stop portal for tracking job applications, replacing a spreadsheet-per-search-season habit. Built as a learning project for React/TypeScript, FastAPI, PostgreSQL, S3 file storage, and Claude-powered resume tailoring.
 
-Live at [job-tracker-nine-coral.vercel.app](https://job-tracker-nine-coral.vercel.app). Built so far: application tracking (table + Kanban, plus a persistent "companies interviewed" list and a "Waiting" status for tracking who you're still waiting to hear back from) with email/password and Google/GitHub sign-in, a resume library backed by S3, AI-assisted resume tailoring against a job description, and a stats dashboard (status breakdown, interview rate, time-in-stage).
+Live at [pipelinetrack.dev](https://pipelinetrack.dev). Built so far: application tracking (table + Kanban, plus a persistent "companies interviewed" list and a "Waiting" status for tracking who you're still waiting to hear back from) with email/password and Google/GitHub sign-in, a resume library backed by S3, AI-assisted resume tailoring against a job description, and a stats dashboard (status breakdown, interview rate, time-in-stage).
 
 ## Stack
 
@@ -59,11 +59,28 @@ Resume/cover letter storage uses real S3 with presigned URLs — the app itself 
 1. Create an S3 bucket. Leave **"Block all public access" on** (the default) — presigned URLs are the only access path, objects are never public.
 2. Set the bucket's **CORS configuration** (this is the step most likely to be missed — a missing/wrong CORS config shows up as an opaque browser CORS error, not an S3 auth error):
    ```json
-   [{"AllowedOrigins": ["http://localhost:5173"], "AllowedMethods": ["PUT", "GET"], "AllowedHeaders": ["*"], "ExposeHeaders": ["ETag"], "MaxAgeSeconds": 3000}]
+   [
+     {
+       "AllowedOrigins": ["http://localhost:5173"],
+       "AllowedMethods": ["PUT", "GET"],
+       "AllowedHeaders": ["*"],
+       "ExposeHeaders": ["ETag"],
+       "MaxAgeSeconds": 3000
+     }
+   ]
    ```
 3. Create a dedicated IAM user (programmatic access, no console password) and attach this inline policy, with your real bucket name substituted in:
    ```json
-   {"Version": "2012-10-17", "Statement": [{"Effect": "Allow", "Action": ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"], "Resource": "arn:aws:s3:::YOUR_BUCKET_NAME/*"}]}
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Effect": "Allow",
+         "Action": ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"],
+         "Resource": "arn:aws:s3:::YOUR_BUCKET_NAME/*"
+       }
+     ]
+   }
    ```
 4. Generate an access key for that IAM user and drop the values into `backend/.env`:
    ```
@@ -108,7 +125,7 @@ Backend (FastAPI + Postgres) on **Render**, frontend (static Vite build) on **Ve
 
 1. Back in Render, set the web service's `FRONTEND_URL` env var to the Vercel URL (e.g. `https://job-tracker.vercel.app`) and trigger a manual redeploy — `app/main.py`'s CORS config and `routers/auth.py`'s OAuth-callback redirect both read this at startup.
 2. **Google**: in the [Cloud Console credentials page](https://console.cloud.google.com/apis/credentials), add `https://<your-render-service>.onrender.com/auth/google/callback` as an additional authorized redirect URI on the same OAuth client — Google allows multiple, so the `localhost:8000` one for local dev keeps working alongside it.
-3. **GitHub**: OAuth Apps only allow *one* callback URL each — register a **second, separate OAuth App** for production (callback `https://<your-render-service>.onrender.com/auth/github/callback`) instead of overwriting the dev one, and put its client id/secret in Render's env vars rather than the dev app's.
+3. **GitHub**: OAuth Apps only allow _one_ callback URL each — register a **second, separate OAuth App** for production (callback `https://<your-render-service>.onrender.com/auth/github/callback`) instead of overwriting the dev one, and put its client id/secret in Render's env vars rather than the dev app's.
 4. **S3 CORS**: add the Vercel origin to the bucket's `AllowedOrigins` (see [AWS S3 setup](#aws-s3-setup-needed-for-resume-uploads) above) — resume uploads are a direct browser→S3 PUT via presigned URL, so the `localhost:5173`-only CORS config from local dev won't cover production uploads.
 
 Both pre-launch Claude billing safety items (graceful 403 handling, a monthly spend limit on the Anthropic account) are already done — see the Roadmap below.
@@ -119,18 +136,19 @@ Both pre-launch Claude billing safety items (graceful 403 handling, a monthly sp
 
 Layered by responsibility — each folder only knows about the one below it:
 
-| Layer | Folder | Job |
-|---|---|---|
-| Config/security | `core/` | Env var loading (`config.py`), password hashing + JWT (`security.py`), OAuth client setup (`oauth.py`), S3 presigned URLs (`s3.py`) |
-| Database connection | `db/` | SQLAlchemy engine/session (`session.py`), declarative base (`base.py`) |
-| Tables | `models/` | SQLAlchemy classes — what the DB tables actually look like |
-| Validation | `schemas/` | Pydantic classes — shape of request/response JSON, separate from the DB models on purpose (see below) |
-| Database queries | `crud/` | The actual `SELECT`/`INSERT`/`UPDATE`/`DELETE` logic, framework-agnostic (no HTTP knowledge) |
-| External API calls | `services/` | Logic that talks to a third-party API rather than the database — currently just `tailoring.py` (Claude). Kept separate from `crud/` since it's not a DB query, and separate from `routers/` so the HTTP layer doesn't own prompt-building or SDK calls directly |
-| HTTP endpoints | `routers/` | Parses requests, checks auth, calls `crud/`/`services/`, returns responses |
-| Schema history | `alembic/` | One migration file per change ever made to the DB schema |
+| Layer               | Folder      | Job                                                                                                                                                                                                                                                             |
+| ------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Config/security     | `core/`     | Env var loading (`config.py`), password hashing + JWT (`security.py`), OAuth client setup (`oauth.py`), S3 presigned URLs (`s3.py`)                                                                                                                             |
+| Database connection | `db/`       | SQLAlchemy engine/session (`session.py`), declarative base (`base.py`)                                                                                                                                                                                          |
+| Tables              | `models/`   | SQLAlchemy classes — what the DB tables actually look like                                                                                                                                                                                                      |
+| Validation          | `schemas/`  | Pydantic classes — shape of request/response JSON, separate from the DB models on purpose (see below)                                                                                                                                                           |
+| Database queries    | `crud/`     | The actual `SELECT`/`INSERT`/`UPDATE`/`DELETE` logic, framework-agnostic (no HTTP knowledge)                                                                                                                                                                    |
+| External API calls  | `services/` | Logic that talks to a third-party API rather than the database — currently just `tailoring.py` (Claude). Kept separate from `crud/` since it's not a DB query, and separate from `routers/` so the HTTP layer doesn't own prompt-building or SDK calls directly |
+| HTTP endpoints      | `routers/`  | Parses requests, checks auth, calls `crud/`/`services/`, returns responses                                                                                                                                                                                      |
+| Schema history      | `alembic/`  | One migration file per change ever made to the DB schema                                                                                                                                                                                                        |
 
 Request flow for anything that touches the database, e.g. `GET /applications`:
+
 ```
 routers/applications.py   → checks auth (Depends(get_current_user)), calls crud
         ↓
@@ -143,17 +161,18 @@ PostgreSQL (Docker)
 
 ### Frontend (`frontend/src/`)
 
-| Folder | Job |
-|---|---|
-| `routes/` | Full pages — `LandingPage`, `LoginPage`, `ApplicationsTablePage`, `ApplicationsBoardPage`, `ResumesPage`, `TailorPage`, etc. |
-| `components/` | Reusable pieces used by routes — Kanban card/column, form inputs, nav bar, resume upload form/list, the tailor form + results panel |
-| `auth/` | Login/session state — `AuthContext` (React Context, not Redux) + `RequireAuth` route guard |
-| `hooks/` | Data-fetching logic — `useApplications.ts` / `useResumes.ts` / `useTailor.ts` wrap their respective API calls in React Query; `useApplicationSearch.ts` filters the cached list client-side, with the search term kept in the URL (`?q=`) rather than component state |
-| `lib/api.ts` | The single `axios` instance every network call goes through — attaches the JWT header, handles 401s globally |
-| `lib/tailorCache.ts` | Caches the last successful tailoring result in `sessionStorage` so an accidental refresh doesn't lose it and force a re-generate (a real, billed API call) |
-| `types/` | Shared TypeScript types mirroring the backend's Pydantic schemas |
+| Folder               | Job                                                                                                                                                                                                                                                                   |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `routes/`            | Full pages — `LandingPage`, `LoginPage`, `ApplicationsTablePage`, `ApplicationsBoardPage`, `ResumesPage`, `TailorPage`, etc.                                                                                                                                          |
+| `components/`        | Reusable pieces used by routes — Kanban card/column, form inputs, nav bar, resume upload form/list, the tailor form + results panel                                                                                                                                   |
+| `auth/`              | Login/session state — `AuthContext` (React Context, not Redux) + `RequireAuth` route guard                                                                                                                                                                            |
+| `hooks/`             | Data-fetching logic — `useApplications.ts` / `useResumes.ts` / `useTailor.ts` wrap their respective API calls in React Query; `useApplicationSearch.ts` filters the cached list client-side, with the search term kept in the URL (`?q=`) rather than component state |
+| `lib/api.ts`         | The single `axios` instance every network call goes through — attaches the JWT header, handles 401s globally                                                                                                                                                          |
+| `lib/tailorCache.ts` | Caches the last successful tailoring result in `sessionStorage` so an accidental refresh doesn't lose it and force a re-generate (a real, billed API call)                                                                                                            |
+| `types/`             | Shared TypeScript types mirroring the backend's Pydantic schemas                                                                                                                                                                                                      |
 
 Request flow for a login click, e.g. `AuthContext.login()`:
+
 ```
 auth/AuthContext.tsx        → calls api.post('/auth/login', ...)
         ↓
@@ -165,6 +184,7 @@ back to AuthContext.tsx     → stores token, fetches /auth/me, updates React st
 ```
 
 Resume upload is a three-hop flow, not a single request — the backend only ever handles metadata, never the file bytes:
+
 ```
 hooks/useResumes.ts (useUploadResume)
         ↓  1. POST /resumes { label, content_type }
@@ -178,14 +198,14 @@ S3 bucket
 ### Key design decisions
 
 - **ORM models and Pydantic schemas are kept separate** (`models/` vs `schemas/`), even though it's more files — this lets API responses diverge from DB columns (e.g. hiding `password_hash`) without reshaping the database.
-- **Auth state uses React Context, not Redux.** Redux solves *client* state; your applications data is *server* state (it lives in Postgres, the frontend just caches it), which is what React Query is purpose-built for. Auth session data is small and rarely changes, so Context is enough on its own.
+- **Auth state uses React Context, not Redux.** Redux solves _client_ state; your applications data is _server_ state (it lives in Postgres, the frontend just caches it), which is what React Query is purpose-built for. Auth session data is small and rarely changes, so Context is enough on its own.
 - **JWT lives in `localStorage`**, not an httpOnly cookie — simpler for local dev across different ports (`5173` frontend, `8000` backend). Still true in production as deployed — a known hardening gap (a token in `localStorage` is readable by any script that achieves XSS, unlike an httpOnly cookie), not yet addressed.
 - **Native Postgres enums** (`ApplicationStatus`, `OAuthProvider`) instead of plain strings — DB-level validation, at the cost of enum changes needing a slightly more careful migration later.
 - **Resume rows are created optimistically, before the S3 upload happens** — not a two-step presign-then-confirm state machine. A failed upload can leave an orphaned DB row with no matching S3 object (harmless, just delete it), which is a simpler tradeoff than adding a `pending`/`complete` status column for a solo-user app.
 - **`core/s3.py` forces the regional S3 endpoint explicitly** (`s3.<region>.amazonaws.com`), rather than letting boto3 default to the legacy global `s3.amazonaws.com`. For any bucket outside `us-east-1`, that default endpoint causes AWS to redirect — and since the browser's `fetch()` PUT is a cross-origin request, that redirect surfaces as a generic CORS error rather than a clear "wrong endpoint" message. Worth knowing if you ever see a CORS failure that a correct CORS config doesn't fix.
 - **Application search is client-side, filtering the already-cached list** — not a `?search=` param on `GET /applications`. At personal-project scale (dozens to a few hundred rows) this is simpler and instant, with no per-keystroke network round-trip. The search term lives in the URL (`?q=`) rather than component state, so it survives switching between Table and Board — `NavBar.tsx`'s links deliberately carry the current `location.search` forward for exactly this reason.
 - **New enum values on a native Postgres enum need a hand-written migration**, not `--autogenerate` — Alembic's default comparator doesn't reliably detect added members on an existing enum type (see the `withdrawn` status migration for the pattern: a bare `ALTER TYPE ... ADD VALUE`, with `downgrade()` left as a no-op since Postgres has no `DROP VALUE`).
-- **Resume tailoring is a standalone page, not an action on an application record.** Tailoring naturally happens *before* you've applied — you paste the job description in fresh each time, tailor, apply on the company's site, and only then log the application — so tying it to a saved application (via an edit modal, say) would put the feature in the wrong place in that sequence.
+- **Resume tailoring is a standalone page, not an action on an application record.** Tailoring naturally happens _before_ you've applied — you paste the job description in fresh each time, tailor, apply on the company's site, and only then log the application — so tying it to a saved application (via an edit modal, say) would put the feature in the wrong place in that sequence.
 - **Nothing about a tailoring request is persisted server-side** — no DB table, no history. The last successful result is cached client-side only, in `sessionStorage` (survives a refresh, clears on tab close or logout), which is enough to protect against losing a result to an accidental refresh without indefinitely storing job description text in the database.
 - **PDF resumes are sent to Claude as a native `document` content block; DOCX resumes are text-extracted locally first** (via `python-docx`) — the Messages API reads PDF natively but has no equivalent for DOCX.
 - **`max_tokens` has real headroom (8192) and truncated responses fail cleanly.** A long resume + long job description can push a structured-output response past a tight token ceiling, which fails JSON validation mid-parse; the router catches that specific failure and returns a clear 502 rather than letting it surface as an opaque 500.
@@ -200,10 +220,12 @@ S3 bucket
 - [x] **Deploy** — Postgres + API on Render, frontend on Vercel; live at [job-tracker-nine-coral.vercel.app](https://job-tracker-nine-coral.vercel.app), verified end-to-end (register/login, application CRUD, dashboard stats, SPA routing) against the real production stack
 
 Before opening the deployed app to real users, two things were done about the same failure mode — an account-wide Claude billing cutoff:
+
 - [x] Catch `anthropic.PermissionDeniedError` (403 — `billing_error` or `permission_error`) in `routers/resumes.py`'s tailor endpoint, same pattern as the existing `ValidationError` → 502 handling — a billing cutoff now returns a clear 503 "temporarily unavailable" instead of an opaque 500, and unlike the per-user rate limit's 429, this failure mode hits every user at once.
 - [x] Set a monthly spend limit on the Anthropic account (Console → Billing/Limits), plus auto-reload so a mid-cycle balance dip doesn't itself trip the 403 path above — a backstop in case per-user rate limiting (already built, see Key design decisions) isn't enough to bound cost on its own.
 
 Known limitation, not yet addressed:
+
 - [ ] JWT auth token lives in `localStorage`, not an httpOnly cookie (see Key design decisions) — readable by any script that achieves XSS. Low urgency for a personal app with a small, trusted user base, but worth hardening before opening this up more broadly.
 
 ## Project layout
