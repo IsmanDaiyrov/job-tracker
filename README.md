@@ -1,8 +1,8 @@
-# Job Tracker
+# Pipeline — Job Application Tracker
 
-A single-stop portal for tracking job applications, replacing a spreadsheet-per-search-season habit. Built as a learning project for React/TypeScript, FastAPI, PostgreSQL, S3 file storage, and Claude-powered resume tailoring.
+A one-stop portal for tracking job applications, replacing a spreadsheet-per-search-season habit. Built as a learning project for React/TypeScript, FastAPI, PostgreSQL, S3 file storage, and Claude-powered resume tailoring.
 
-Live at [pipelinetrack.dev](https://pipelinetrack.dev). Built so far: application tracking (table + Kanban, plus a persistent "companies interviewed" list and a "Waiting" status for tracking who you're still waiting to hear back from) with email/password and Google/GitHub sign-in, a resume library backed by S3, AI-assisted resume tailoring against a job description, and a stats dashboard (status breakdown, interview rate, time-in-stage).
+**Live at [pipelinetrack.dev](https://pipelinetrack.dev)** — track every application (table or Kanban), get AI-assisted resume tailoring, and see stats on how the search is going, all behind email/password or Google/GitHub sign-in. Full feature breakdown in [Architecture](#architecture) and [Roadmap](#roadmap) below.
 
 ## Stack
 
@@ -103,7 +103,7 @@ The Tailor page calls the Claude API directly — the rest of the app works with
 
 ## Deployment
 
-**Live:** frontend at [job-tracker-nine-coral.vercel.app](https://job-tracker-nine-coral.vercel.app), backend at `https://job-tracker-api-lf4j.onrender.com`. Both auto-deploy on every push to `main` now that they're connected — no separate CI/CD pipeline needed.
+**Live:** frontend at [pipelinetrack.dev](https://pipelinetrack.dev) (a custom domain connected through Vercel — see step 4 below; the original `.vercel.app` URL still works too), backend at `https://job-tracker-api-lf4j.onrender.com`. Both auto-deploy on every push to `main` now that they're connected — no separate CI/CD pipeline needed.
 
 Backend (FastAPI + Postgres) on **Render**, frontend (static Vite build) on **Vercel**. The steps below are what it took to set this up from scratch — kept here in case you ever need to redeploy on a new account (Render/Vercel project deleted, forking this repo, etc.). (Check current Render/Vercel pricing before relying on the free tiers — limits change.)
 
@@ -127,6 +127,12 @@ Backend (FastAPI + Postgres) on **Render**, frontend (static Vite build) on **Ve
 2. **Google**: in the [Cloud Console credentials page](https://console.cloud.google.com/apis/credentials), add `https://<your-render-service>.onrender.com/auth/google/callback` as an additional authorized redirect URI on the same OAuth client — Google allows multiple, so the `localhost:8000` one for local dev keeps working alongside it.
 3. **GitHub**: OAuth Apps only allow _one_ callback URL each — register a **second, separate OAuth App** for production (callback `https://<your-render-service>.onrender.com/auth/github/callback`) instead of overwriting the dev one, and put its client id/secret in Render's env vars rather than the dev app's.
 4. **S3 CORS**: add the Vercel origin to the bucket's `AllowedOrigins` (see [AWS S3 setup](#aws-s3-setup-needed-for-resume-uploads) above) — resume uploads are a direct browser→S3 PUT via presigned URL, so the `localhost:5173`-only CORS config from local dev won't cover production uploads.
+
+### 4. (Optional) Custom domain
+
+1. Buy/connect a domain through Vercel's project settings → Domains, then choose **Connect an existing project** and point it at this one (not "Deploy something" or "Redirect" — those create a separate project or just forward visitors instead of actually serving the app at the new domain).
+2. Update two things from step 3 again, this time with the custom domain instead of the `.vercel.app` URL: Render's `FRONTEND_URL`, and the S3 bucket's CORS `AllowedOrigins`. (Google/GitHub OAuth redirect URIs don't need to change — those point at the Render backend URL, which is unaffected by a frontend domain change.)
+3. **A brand-new domain can trip "new domain" security heuristics on some networks** — some routers/ISPs treat freshly-registered domains as a phishing risk and reset the connection (`ERR_CONNECTION_RESET`) rather than resolving normally, even though DNS and the deployment itself are fine. This is network-specific (test on cellular data to confirm), self-resolves as the domain "ages," and can be bypassed immediately by pointing your device/router at a public DNS resolver (`1.1.1.1` or `8.8.8.8`) instead of your ISP's default.
 
 Both pre-launch Claude billing safety items (graceful 403 handling, a monthly spend limit on the Anthropic account) are already done — see the Roadmap below.
 
@@ -217,7 +223,7 @@ S3 bucket
 - [x] **File storage** — resume library, presigned S3 upload/download, verified end-to-end against a real bucket
 - [x] **AI tailoring** — standalone Tailor page; Claude API integration for tailored bullets + cover letter drafts against a pasted job description
 - [x] **Dashboard** — stats endpoint + charts (status breakdown, time-in-stage); interview rate and persistent "companies interviewed" tracking that survives a later rejection, with a manual-override escape hatch and a "Waiting" status for interviewed applications pending a reply
-- [x] **Deploy** — Postgres + API on Render, frontend on Vercel; live at [job-tracker-nine-coral.vercel.app](https://job-tracker-nine-coral.vercel.app), verified end-to-end (register/login, application CRUD, dashboard stats, SPA routing) against the real production stack
+- [x] **Deploy** — Postgres + API on Render, frontend on Vercel with a custom domain ([pipelinetrack.dev](https://pipelinetrack.dev)); verified end-to-end (register/login, application CRUD, dashboard stats, SPA routing) against the real production stack
 
 Before opening the deployed app to real users, two things were done about the same failure mode — an account-wide Claude billing cutoff:
 
