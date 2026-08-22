@@ -7,7 +7,7 @@ from app.routers import applications, auth, resumes, stats
 
 settings = get_settings()
 
-app = FastAPI(title="Job Tracker API")
+app = FastAPI(title="Pipeline API")
 
 # Session cookie is only used transiently to hold the OAuth state/nonce during
 # the redirect round-trip (Authlib's Starlette integration requires it) — it's
