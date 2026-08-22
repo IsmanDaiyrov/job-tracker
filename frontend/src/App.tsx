@@ -1,3 +1,4 @@
+import { Analytics } from '@vercel/analytics/react'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { Navigate, RouterProvider, createBrowserRouter } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthContext'
@@ -44,6 +45,7 @@ function App() {
       <AuthProvider>
         <RouterProvider router={router} />
       </AuthProvider>
+      <Analytics />
     </QueryClientProvider>
   )
 }
