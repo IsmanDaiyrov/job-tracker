@@ -12,14 +12,18 @@ import type { ApplicationStatus } from "../../types/application";
 // edge case, so avoid names like "Linear" that are known to guess wrong (linear.app, not
 // linear.com).
 
-function MiniAppHeader({ active }: { active: "Table" | "Board" | "Resumes" }) {
+function MiniAppHeader({
+  active,
+}: {
+  active: "Table" | "Board" | "Dashboard" | "Resumes" | "Tailor";
+}) {
   return (
     <div className="flex items-center justify-between border-b border-ink/10 px-4 py-3">
       <span className="font-display text-sm">
         Pipeline<span className="text-accent">.</span>
       </span>
       <div className="flex items-center gap-1">
-        {(["Table", "Board", "Resumes"] as const).map((label) => (
+        {(["Table", "Board", "Dashboard", "Resumes", "Tailor"] as const).map((label) => (
           <span
             key={label}
             className={
@@ -57,26 +61,19 @@ const boardColumns: {
     ],
   },
   {
-    label: "Screening",
-    cards: [
-      { company: "Vercel", role: "Frontend Engineer", status: "screening" },
-    ],
-  },
-  {
     label: "Interview",
     cards: [
       { company: "Anthropic", role: "Software Engineer", status: "interview" },
-      {
-        company: "Airbnb",
-        role: "Senior Software Engineer",
-        status: "interview",
-      },
     ],
   },
   {
-    label: "Offer",
+    label: "Waiting",
     cards: [
-      { company: "Figma", role: "Software Engineer, Infra", status: "offer" },
+      {
+        company: "Airbnb",
+        role: "Senior Software Engineer",
+        status: "waiting",
+      },
     ],
   },
 ];
@@ -224,6 +221,50 @@ export function SearchPreview() {
               </div>
             );
           })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function TailorPreview() {
+  return (
+    <div className="overflow-hidden rounded-xl border border-ink/10 bg-paper">
+      <MiniAppHeader active="Tailor" />
+      <div className="p-4">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-ink/40">
+          Suggested bullet edit
+        </p>
+        <div className="mt-2 rounded-[10px] border border-ink/10 p-3">
+          <p className="text-[11px] text-ink/40 line-through">
+            Worked on backend services for internal tools.
+          </p>
+          <p className="mt-1 text-xs font-medium text-ink">
+            Built and shipped backend services handling 50K+ daily requests.
+          </p>
+          <p className="mt-2 text-[11px] italic text-sage">
+            Matches the listing's emphasis on scale
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function DashboardPreview() {
+  return (
+    <div className="overflow-hidden rounded-xl border border-ink/10 bg-paper">
+      <MiniAppHeader active="Dashboard" />
+      <div className="grid grid-cols-2 gap-3 p-4">
+        <div className="rounded-[10px] border border-ink/10 p-3">
+          <p className="text-[10px] font-medium text-ink/50">Interview rate</p>
+          <p className="mt-1 text-2xl font-semibold text-ink">75%</p>
+          <p className="mt-1 text-[10px] text-ink/40">3 of 4 applications</p>
+        </div>
+        <div className="rounded-[10px] border border-ink/10 p-3">
+          <p className="text-[10px] font-medium text-ink/50">Companies interviewed</p>
+          <p className="mt-1 text-2xl font-semibold text-ink">3</p>
+          <p className="mt-1 text-[10px] text-ink/40">Includes ones that later said no — view list</p>
         </div>
       </div>
     </div>
